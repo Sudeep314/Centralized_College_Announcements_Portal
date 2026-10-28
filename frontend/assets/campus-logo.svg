@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <rect width="48" height="48" rx="10" fill="#1e3a8a"/>
+  <!-- Graduation / Notice Cap Symbol -->
+  <path d="M24 10L6 19L24 28L42 19L24 10Z" fill="#38bdf8"/>
+  <path d="M12 22.5V31C12 34.5 17.5 38 24 38C30.5 38 36 34.5 36 31V22.5L24 28.5L12 22.5Z" fill="#ffffff" fill-opacity="0.9"/>
+  <path d="M42 19V30" stroke="#facc15" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

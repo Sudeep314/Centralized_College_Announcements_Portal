@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Announcement Details - CampusNotice</title>
+  
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="brand-container" aria-label="CampusNotice Home">
+        <div class="brand-logo-badge" aria-hidden="true">CN</div>
+        <div class="brand-title-wrap">
+          <span class="brand-title">CampusNotice</span>
+          <span class="brand-subtitle">Centralized Announcements Portal</span>
+        </div>
+      </a>
+
+      <nav class="header-nav">
+        <a href="../index.html" class="nav-link">&larr; Back to Notices</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-layout" style="max-width: 800px;">
+    
+    <!-- Breadcrumb / Back Link -->
+    <div style="margin-bottom: var(--space-4);">
+      <a href="../index.html" class="btn btn-secondary btn-sm">&larr; Back to All Announcements</a>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="state-container">
+      <div class="spinner" aria-hidden="true"></div>
+      <h2 class="state-title">Loading Announcement</h2>
+      <p class="state-message">Fetching announcement details from server...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-state" class="state-container" style="display: none;">
+      <svg class="state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <h2 class="state-title" id="error-title">Notice Not Found</h2>
+      <p class="state-message" id="error-message">The requested announcement could not be found or has been removed.</p>
+      <a href="../index.html" class="btn btn-primary">Return to Dashboard</a>
+    </div>
+
+    <!-- Announcement Detail Card -->
+    <article id="detail-card" class="card" style="display: none; padding: var(--space-8);">
+      
+      <!-- Top Meta -->
+      <div class="card-top-meta" style="margin-bottom: var(--space-4);">
+        <div class="badge-group" id="detail-badges"></div>
+        <div id="detail-published" class="card-date"></div>
+      </div>
+
+      <!-- Title -->
+      <h1 id="detail-title" style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-text-main); margin-bottom: var(--space-4);"></h1>
+
+      <!-- Deadline Badge if applicable -->
+      <div id="detail-deadline" class="deadline-indicator" style="display: none; margin-bottom: var(--space-5);"></div>
+
+      <!-- Full Body Description -->
+      <div id="detail-desc" style="white-space: pre-wrap; line-height: 1.7; font-size: var(--font-size-base); color: var(--color-text-main); margin-bottom: var(--space-8);"></div>
+
+      <!-- External Links Box -->
+      <div id="detail-links-box" style="background-color: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); display: none;">
+        <h2 style="font-size: var(--font-size-sm); font-weight: 600; margin-bottom: var(--space-3); color: var(--color-text-main);">Official Attachments &amp; Links</h2>
+        <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+          <a id="detail-source-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: none; justify-content: flex-start;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            Open Official Source Link
+          </a>
+          <a id="detail-attachment-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: none; justify-content: flex-start;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+            Download Attached Document (PDF)
+          </a>
+        </div>
+      </div>
+
+    </article>
+
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>CampusNotice Portal — Official College Announcements</div>
+      <div><a href="../index.html">Return to Portal Home</a></div>
+    </div>
+  </footer>
+
+  <script type="module" src="../js/announcement-detail.js"></script>
+</body>
+</html>

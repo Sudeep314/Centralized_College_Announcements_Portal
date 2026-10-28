@@ -1,0 +1,163 @@
+/* ==========================================================================
+   CampusNotice - Centralized College Announcements Portal
+   responsive.css: Media Queries for Mobile (320-375px), Tablet (768px), & Desktop
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Tablet & Smaller Laptops (Max Width: 1024px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .main-layout {
+    padding: var(--space-4);
+  }
+
+  .announcements-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-4);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Tablets (Max Width: 768px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .header-inner {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .brand-title {
+    font-size: var(--font-size-lg);
+  }
+
+  .brand-subtitle {
+    display: none; /* Hide subtitle on mobile to conserve space */
+  }
+
+  .portal-hero {
+    padding: var(--space-5) var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  .portal-hero h1 {
+    font-size: var(--font-size-xl);
+  }
+
+  .controls-bar {
+    padding: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .category-tabs {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: var(--space-2);
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+  }
+
+  .category-tab-btn {
+    flex-shrink: 0;
+  }
+
+  .sort-and-reset {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .select-control {
+    flex: 1;
+  }
+
+  .announcements-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-dialog {
+    max-width: 95vw;
+    margin: var(--space-2);
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: var(--space-4);
+  }
+
+  /* Admin responsive table view */
+  .admin-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Devices (Max Width: 480px, including 320px - 375px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  html {
+    font-size: 15px;
+  }
+
+  .header-inner {
+    flex-direction: row;
+    gap: var(--space-2);
+  }
+
+  .header-nav {
+    gap: var(--space-2);
+  }
+
+  .nav-link {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+  }
+
+  .portal-hero h1 {
+    font-size: 1.25rem;
+  }
+
+  .card {
+    padding: var(--space-4);
+  }
+
+  .card-title {
+    font-size: 1.05rem;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .card-footer .btn {
+    width: 100%;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-3);
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+}

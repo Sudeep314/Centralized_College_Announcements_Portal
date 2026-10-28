@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - CampusNotice Portal</title>
+  
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="brand-container" aria-label="CampusNotice Home">
+        <div class="brand-logo-badge" aria-hidden="true">CN</div>
+        <div class="brand-title-wrap">
+          <span class="brand-title">CampusNotice</span>
+          <span class="brand-subtitle">Administrator Portal</span>
+        </div>
+      </a>
+
+      <nav class="header-nav">
+        <a href="../index.html" class="nav-link">&larr; Student View</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Login Layout -->
+  <main class="main-layout" style="display: flex; align-items: center; justify-content: center; min-height: 70vh;">
+    
+    <div class="card" style="max-width: 440px; width: 100%; padding: var(--space-8); box-shadow: var(--shadow-md);">
+      
+      <div style="text-align: center; margin-bottom: var(--space-6);">
+        <div class="brand-logo-badge" style="margin: 0 auto var(--space-3); width: 48px; height: 48px; font-size: 1.5rem;">CN</div>
+        <h1 style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-text-main); margin-bottom: var(--space-1);">Admin Login</h1>
+        <p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">
+          Sign in to manage, publish, and moderate college announcements.
+        </p>
+      </div>
+
+      <!-- Alert Notification Container -->
+      <div id="login-alert" class="alert alert-error" style="display: none;" role="alert"></div>
+
+      <!-- Login Form -->
+      <form id="admin-login-form" novalidate>
+        
+        <!-- Username Field -->
+        <div class="form-group">
+          <label for="username" class="form-label">Username or Admin Email <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            class="form-control" 
+            placeholder="e.g. admin or staff@college.edu" 
+            required 
+            autocomplete="username"
+          >
+          <span id="username-error" class="form-error" style="display: none;">Username is required.</span>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <label for="password" class="form-label">Password <span class="required">*</span></label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            class="form-control" 
+            placeholder="Enter administrator password" 
+            required 
+            autocomplete="current-password"
+          >
+          <span id="password-error" class="form-error" style="display: none;">Password is required.</span>
+        </div>
+
+        <!-- Remember Session Option -->
+        <div class="form-group" style="margin-bottom: var(--space-6);">
+          <label class="form-checkbox-label">
+            <input type="checkbox" id="remember-me">
+            <span>Remember session on this device</span>
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; padding: var(--space-3);">
+          Sign In as Administrator
+        </button>
+
+      </form>
+
+      <!-- Note for evaluation -->
+      <div style="margin-top: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--color-border); font-size: var(--font-size-xs); color: var(--color-text-subtle); text-align: center;">
+        Academic Skill Lab Project. Authentication is verified through the backend API service (<code>/api/auth/login</code>).
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>CampusNotice — Administrator Portal</div>
+      <div><a href="../index.html">Back to CampusNotice Home</a></div>
+    </div>
+  </footer>
+
+  <script type="module" src="../js/admin-login.js"></script>
+</body>
+</html>
