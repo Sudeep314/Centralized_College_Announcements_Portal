@@ -1,0 +1,340 @@
+{
+  "info": {
+    "_postman_id": "c8a41bf2-e923-4f9e-bc48-d3e923e1f001",
+    "name": "CampusNotice API Tests (Skill Lab)",
+    "description": "Complete test suite for CampusNotice backend API covering health check, public browsing, filtering, search, sorting, pagination, admin authentication, protected CRUD, validation, and error edge cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "createdId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Expected Status: 200 OK. Confirms the API server is healthy and operational."
+      }
+    },
+    {
+      "name": "02. List All Announcements",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/announcements",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements"]
+        },
+        "description": "Expected Status: 200 OK. Returns paginated list of announcements with pinned notices on top."
+      }
+    },
+    {
+      "name": "03. Search Announcements (Keyword: Exam)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/announcements?search=exam",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements"],
+          "query": [
+            {
+              "key": "search",
+              "value": "exam"
+            }
+          ]
+        },
+        "description": "Expected Status: 200 OK. Case-insensitive search on title and description."
+      }
+    },
+    {
+      "name": "04. Filter Announcements by Category (Examinations)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/announcements?category=Examinations",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements"],
+          "query": [
+            {
+              "key": "category",
+              "value": "Examinations"
+            }
+          ]
+        },
+        "description": "Expected Status: 200 OK. Filters announcements by category enum."
+      }
+    },
+    {
+      "name": "05. Sort and Paginate (page 1, limit 3, sort oldest)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/announcements?page=1&limit=3&sort=oldest",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "3"
+            },
+            {
+              "key": "sort",
+              "value": "oldest"
+            }
+          ]
+        },
+        "description": "Expected Status: 200 OK. Tests pagination and sort direction."
+      }
+    },
+    {
+      "name": "06. Retrieve One Announcement by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/announcements/{{createdId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements", "{{createdId}}"]
+        },
+        "description": "Expected Status: 200 OK. Retrieves a single announcement document by its 24-character hexadecimal MongoDB ObjectId."
+      }
+    },
+    {
+      "name": "07. Admin Login (Obtain JWT)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const jsonData = pm.response.json();",
+              "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+              "    pm.collectionVariables.set('adminToken', jsonData.data.token);",
+              "    console.log('Saved adminToken to collection variable');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "description": "Expected Status: 200 OK. Returns signed JWT token for admin write authorization."
+      }
+    },
+    {
+      "name": "08. Create Announcement (Protected)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const jsonData = pm.response.json();",
+              "if (jsonData.success && jsonData.data && jsonData.data._id) {",
+              "    pm.collectionVariables.set('createdId', jsonData.data._id);",
+              "    console.log('Saved createdId:', jsonData.data._id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Campus Placement Drive — Google & Infosys 2026\",\n  \"description\": \"Final year undergraduate students are eligible for on-campus placements. Register on the training & placement portal with your updated resume.\",\n  \"category\": \"Events\",\n  \"pinned\": true,\n  \"deadline\": \"2026-11-30T23:59:59.000Z\",\n  \"sourceUrl\": \"https://college.edu/placements\",\n  \"attachmentUrl\": \"https://college.edu/docs/eligibility_criteria.pdf\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/announcements",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements"]
+        },
+        "description": "Expected Status: 201 Created. Creates a new announcement and returns the saved document."
+      }
+    },
+    {
+      "name": "09. Update Announcement (Protected)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"[URGENT] Campus Placement Drive — Google & Infosys 2026\",\n  \"pinned\": true,\n  \"deadline\": \"2026-12-05T23:59:59.000Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/announcements/{{createdId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements", "{{createdId}}"]
+        },
+        "description": "Expected Status: 200 OK. Updates specific fields of an announcement."
+      }
+    },
+    {
+      "name": "10. Delete Announcement (Protected)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/announcements/{{createdId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements", "{{createdId}}"]
+        },
+        "description": "Expected Status: 200 OK. Deletes the announcement record."
+      }
+    },
+    {
+      "name": "11. Validation Failure (Invalid Category & URLs)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"\",\n  \"description\": \"Missing valid category and malformed URL\",\n  \"category\": \"Sports\",\n  \"sourceUrl\": \"not-a-valid-url\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/announcements",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements"]
+        },
+        "description": "Expected Status: 400 Bad Request. Tests express-validator input validation."
+      }
+    },
+    {
+      "name": "12. Nonexistent Announcement ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/announcements/507f1f77bcf86cd799439011",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements", "507f1f77bcf86cd799439011"]
+        },
+        "description": "Expected Status: 404 Not Found. Returns clean error for missing ID."
+      }
+    },
+    {
+      "name": "13. Attempt Write Without Token (Unauthorized)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Unauthorized Attempt\",\n  \"description\": \"This must fail\",\n  \"category\": \"General\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/announcements",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements"]
+        },
+        "description": "Expected Status: 401 Unauthorized. Tests write protection without Authorization header."
+      }
+    },
+    {
+      "name": "14. Attempt Write With Invalid Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer invalid_gibberish_token_string"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Tampered Token Attempt\",\n  \"description\": \"This must also fail\",\n  \"category\": \"General\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/announcements",
+          "host": ["{{baseUrl}}"],
+          "path": ["announcements"]
+        },
+        "description": "Expected Status: 401 Unauthorized. Tests token signature verification failure."
+      }
+    }
+  ]
+}
