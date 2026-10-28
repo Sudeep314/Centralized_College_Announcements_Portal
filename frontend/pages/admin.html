@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Announcement Management - CampusNotice Admin</title>
+  
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="brand-container" aria-label="CampusNotice Home">
+        <div class="brand-logo-badge" aria-hidden="true">CN</div>
+        <div class="brand-title-wrap">
+          <span class="brand-title">CampusNotice</span>
+          <span class="brand-subtitle">Administrator Dashboard</span>
+        </div>
+      </a>
+
+      <div style="display: flex; align-items: center; gap: var(--space-3);">
+        <a href="../index.html" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          Preview Portal
+        </a>
+        <button type="button" id="admin-logout-btn" class="btn btn-secondary btn-sm" style="color: var(--color-danger-btn);">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Management Layout -->
+  <main class="main-layout">
+    
+    <!-- Admin Hero / Action Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-6);">
+      <div>
+        <h1 style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-text-main); margin-bottom: var(--space-1);">
+          Announcement Management
+        </h1>
+        <p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">
+          Create, edit, pin, and remove college notices. All actions synchronize with the backend database.
+        </p>
+      </div>
+
+      <button type="button" id="open-create-modal-btn" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        New Announcement
+      </button>
+    </div>
+
+    <!-- Alert Banner Container for Feedback -->
+    <div id="admin-alert" class="alert" style="display: none;" role="alert"></div>
+
+    <!-- Filter & Search Controls in Admin -->
+    <div class="controls-bar" style="padding: var(--space-4); margin-bottom: var(--space-5);">
+      <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        
+        <div class="search-wrap" style="max-width: 380px;">
+          <input 
+            type="search" 
+            id="admin-search-input" 
+            class="search-input" 
+            placeholder="Search by title or category..."
+            style="padding-left: var(--space-3);"
+          >
+        </div>
+
+        <div style="display: flex; gap: var(--space-3); align-items: center;">
+          <label for="admin-category-filter" style="font-size: var(--font-size-sm); color: var(--color-text-muted); font-weight: 500;">Filter:</label>
+          <select id="admin-category-filter" class="select-control">
+            <option value="All">All Categories</option>
+            <option value="Academics">Academics</option>
+            <option value="Examinations">Examinations</option>
+            <option value="Events">Events</option>
+            <option value="General">General</option>
+          </select>
+
+          <button type="button" id="admin-refresh-btn" class="btn btn-secondary btn-sm" title="Reload from database">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+            Refresh
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="admin-loading" class="state-container">
+      <div class="spinner" aria-hidden="true"></div>
+      <h2 class="state-title">Loading Notices</h2>
+      <p class="state-message">Syncing announcement records from the backend...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="admin-empty" class="state-container" style="display: none;">
+      <h2 class="state-title">No Announcements Found</h2>
+      <p class="state-message">No records match the current filter or the database is empty.</p>
+      <button type="button" class="btn btn-primary btn-sm" id="empty-create-btn">Create First Announcement</button>
+    </div>
+
+    <!-- Announcements Management Table Container -->
+    <div id="admin-table-wrapper" class="card" style="display: none; padding: 0; overflow: hidden;">
+      <div class="admin-table-container">
+        <table class="admin-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: var(--font-size-sm);">
+          <thead style="background-color: var(--color-bg); border-bottom: 2px solid var(--color-border); color: var(--color-text-muted); font-size: var(--font-size-xs); text-transform: uppercase;">
+            <tr>
+              <th style="padding: var(--space-3) var(--space-4);">Status / Pin</th>
+              <th style="padding: var(--space-3) var(--space-4);">Title</th>
+              <th style="padding: var(--space-3) var(--space-4);">Category</th>
+              <th style="padding: var(--space-3) var(--space-4);">Published Date</th>
+              <th style="padding: var(--space-3) var(--space-4);">Deadline</th>
+              <th style="padding: var(--space-3) var(--space-4); text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-table-body" style="divide-y: 1px solid var(--color-border);">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================================================
+       Create / Edit Announcement Modal Dialog
+       ======================================================================== -->
+  <div id="announcement-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="form-modal-title">
+    <div class="modal-dialog" style="max-width: 680px;">
+      
+      <div class="modal-header">
+        <h2 id="form-modal-title" class="modal-title">New Announcement</h2>
+        <button type="button" id="close-form-modal-btn" class="modal-close-btn" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <form id="announcement-form" novalidate>
+        <div class="modal-body">
+          
+          <input type="hidden" id="form-announcement-id">
+
+          <!-- Title Field -->
+          <div class="form-group">
+            <label for="form-title" class="form-label">Announcement Title <span class="required">*</span></label>
+            <input 
+              type="text" 
+              id="form-title" 
+              class="form-control" 
+              placeholder="e.g., Mid-Term Examination Schedule & Guidelines" 
+              required
+            >
+            <span id="title-error" class="form-error" style="display: none;">Title is required.</span>
+          </div>
+
+          <!-- Category Field -->
+          <div class="form-group">
+            <label for="form-category" class="form-label">Category <span class="required">*</span></label>
+            <select id="form-category" class="form-control" required>
+              <option value="Academics">Academics</option>
+              <option value="Examinations">Examinations</option>
+              <option value="Events">Events</option>
+              <option value="General" selected>General</option>
+            </select>
+          </div>
+
+          <!-- Description Field -->
+          <div class="form-group">
+            <label for="form-description" class="form-label">Full Description <span class="required">*</span></label>
+            <textarea 
+              id="form-description" 
+              class="form-control" 
+              rows="5" 
+              placeholder="Enter full announcement details, instructions, or venue information..." 
+              required
+            ></textarea>
+            <span id="desc-error" class="form-error" style="display: none;">Description is required.</span>
+          </div>
+
+          <!-- Dates Row: PublishedAt & Deadline -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-4);">
+            
+            <div class="form-group">
+              <label for="form-published-at" class="form-label">Publication Date</label>
+              <input type="datetime-local" id="form-published-at" class="form-control">
+              <span class="form-helper">Defaults to now if left empty.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="form-deadline" class="form-label">Deadline (Optional)</label>
+              <input type="datetime-local" id="form-deadline" class="form-control">
+              <span class="form-helper">Leave blank if no deadline applies.</span>
+            </div>
+
+          </div>
+
+          <!-- URLs: Source URL & Attachment URL -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-4);">
+            
+            <div class="form-group">
+              <label for="form-source-url" class="form-label">Source URL (Optional)</label>
+              <input 
+                type="url" 
+                id="form-source-url" 
+                class="form-control" 
+                placeholder="https://college.edu/official-notice"
+              >
+              <span class="form-helper">Link to official college portal or department page.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="form-attachment-url" class="form-label">Attachment URL (Optional)</label>
+              <input 
+                type="url" 
+                id="form-attachment-url" 
+                class="form-control" 
+                placeholder="https://college.edu/files/notice.pdf"
+              >
+              <span class="form-helper">Direct link to timetable PDF, brochure, or form.</span>
+            </div>
+
+          </div>
+
+          <!-- Pinned Status Checkbox -->
+          <div class="form-group" style="margin-top: var(--space-2);">
+            <label class="form-checkbox-label">
+              <input type="checkbox" id="form-pinned">
+              <span><strong>Pin this announcement</strong> (Highlight and prioritize at top of student dashboard)</span>
+            </label>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="cancel-form-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="save-announcement-btn" class="btn btn-primary">
+            Save Announcement
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Delete Confirmation Dialog
+       ======================================================================== -->
+  <div id="delete-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title">
+    <div class="modal-dialog" style="max-width: 450px;">
+      
+      <div class="modal-header">
+        <h2 id="delete-dialog-title" class="modal-title" style="color: var(--color-danger-btn);">Confirm Deletion</h2>
+        <button type="button" id="close-delete-modal-btn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="margin-bottom: var(--space-3); color: var(--color-text-main);">
+          Are you sure you want to permanently delete this announcement?
+        </p>
+        <blockquote id="delete-notice-title" style="font-weight: 600; padding: var(--space-3); background-color: var(--color-bg); border-left: 3px solid var(--color-danger-btn); border-radius: var(--radius-sm); margin-bottom: var(--space-3);"></blockquote>
+        <p style="font-size: var(--font-size-xs); color: var(--color-danger-text);">
+          This operation will remove the record directly from the backend database and cannot be undone.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="cancel-delete-btn" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="confirm-delete-btn" class="btn btn-danger">Delete Notice</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>CampusNotice — Administrator Announcement Management Portal</div>
+      <div><a href="../index.html">Back to Student View</a></div>
+    </div>
+  </footer>
+
+  <script type="module" src="../js/admin.js"></script>
+</body>
+</html>

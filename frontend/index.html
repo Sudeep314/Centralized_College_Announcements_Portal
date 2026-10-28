@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusNotice - Centralized College Announcements Portal</title>
+  <meta name="description" content="Centralized college announcement portal for students and faculty. Browse, search, filter, and track upcoming deadlines in one place.">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- ========================================================================
+       Site Header & Navigation
+       ======================================================================== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="brand-container" aria-label="CampusNotice Home">
+        <div class="brand-logo-badge" aria-hidden="true">CN</div>
+        <div class="brand-title-wrap">
+          <span class="brand-title">CampusNotice</span>
+          <span class="brand-subtitle">Centralized Announcements Portal</span>
+        </div>
+      </a>
+
+      <nav class="header-nav" aria-label="Main Navigation">
+        <a href="index.html" class="nav-link active" aria-current="page">Announcements</a>
+        <a href="pages/admin-login.html" class="nav-link" id="nav-admin-link">Admin Portal</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       Main Content Area
+       ======================================================================== -->
+  <main class="main-layout" id="main-content">
+    
+    <!-- Portal Intro Hero -->
+    <section class="portal-hero" aria-labelledby="hero-title">
+      <h1 id="hero-title">College Notices &amp; Deadlines</h1>
+      <p>
+        Stay updated with official college announcements from all academic departments,
+        examination branches, and campus event organizers in one verified place.
+      </p>
+    </section>
+
+    <!-- Controls Bar: Search, Category Filters, Sort -->
+    <section class="controls-bar" aria-label="Filter and Search Notices">
+      
+      <!-- Search Input -->
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
+        <input 
+          type="search" 
+          id="search-input" 
+          class="search-input" 
+          placeholder="Search announcements by keywords (e.g., Exam, Fees, Workshop)..."
+          aria-label="Search announcements"
+          autocomplete="off"
+        >
+        <button type="button" id="search-clear-btn" class="search-clear-btn" aria-label="Clear search input">Clear</button>
+      </div>
+
+      <!-- Filters & Sorting Row -->
+      <div class="filters-row">
+        <!-- Category Tab Buttons -->
+        <div class="category-tabs" role="tablist" aria-label="Filter by category">
+          <button type="button" class="category-tab-btn active" data-category="All" role="tab" aria-selected="true">All</button>
+          <button type="button" class="category-tab-btn" data-category="Academics" role="tab" aria-selected="false">Academics</button>
+          <button type="button" class="category-tab-btn" data-category="Examinations" role="tab" aria-selected="false">Examinations</button>
+          <button type="button" class="category-tab-btn" data-category="Events" role="tab" aria-selected="false">Events</button>
+          <button type="button" class="category-tab-btn" data-category="General" role="tab" aria-selected="false">General</button>
+        </div>
+
+        <!-- Sort Control -->
+        <div class="sort-and-reset">
+          <label for="sort-select" class="sort-label">Sort by:</label>
+          <select id="sort-select" class="select-control" aria-label="Sort announcements">
+            <option value="newest">Newest Published</option>
+            <option value="oldest">Oldest Published</option>
+            <option value="deadline">Upcoming Deadline</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notification / Status Banner Area -->
+    <div id="status-banner-container" aria-live="polite"></div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="state-container" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <h2 class="state-title">Loading Announcements</h2>
+      <p class="state-message">Fetching the latest official notices from the server...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-state" class="state-container" style="display: none;" aria-live="assertive">
+      <svg class="state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <h2 class="state-title" id="error-title">Unable to Load Notices</h2>
+      <p class="state-message" id="error-message">Could not connect to the backend server. Please verify the API is running.</p>
+      <button type="button" id="retry-btn" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6"></path>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        Retry Connection
+      </button>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="state-container" style="display: none;">
+      <svg class="state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      <h2 class="state-title" id="empty-title">No Announcements Found</h2>
+      <p class="state-message" id="empty-message">There are no notices matching your selected category or search keyword.</p>
+      <button type="button" id="reset-filters-btn" class="btn btn-secondary">Clear All Filters</button>
+    </div>
+
+    <!-- ====================================================================
+         Announcements Content Sections
+         ==================================================================== -->
+    <div id="announcements-container" style="display: none;">
+      
+      <!-- Pinned Announcements Section -->
+      <section id="pinned-section" class="pinned-section" style="display: none;" aria-labelledby="pinned-section-title">
+        <div class="section-header">
+          <h2 id="pinned-section-title" class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #b45309;" aria-hidden="true">
+              <line x1="12" y1="17" x2="12" y2="22"></line>
+              <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24Z"></path>
+            </svg>
+            Pinned Notices
+          </h2>
+          <span class="section-badge" id="pinned-count-badge">0 Pinned</span>
+        </div>
+        <div class="announcements-grid" id="pinned-grid"></div>
+      </section>
+
+      <!-- All / Filtered Announcements Section -->
+      <section id="all-section" aria-labelledby="all-section-title">
+        <div class="section-header">
+          <h2 id="all-section-title" class="section-title">Recent Announcements</h2>
+          <span class="section-badge" id="all-count-badge">0 Notices</span>
+        </div>
+        <div class="announcements-grid" id="all-grid"></div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================================================
+       Announcement Detail Modal Dialog
+       ======================================================================== -->
+  <div id="detail-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-announcement-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="badge-group" id="modal-badges"></div>
+        <button type="button" id="modal-close-btn" class="modal-close-btn" aria-label="Close announcement detail modal">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <h2 id="modal-announcement-title" class="modal-title" style="margin-bottom: var(--space-3);"></h2>
+        
+        <div style="display: flex; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-4); font-size: var(--space-3);">
+          <div id="modal-published" class="card-date"></div>
+          <div id="modal-deadline" class="deadline-indicator" style="display: none;"></div>
+        </div>
+
+        <div id="modal-announcement-desc" style="white-space: pre-wrap; line-height: 1.6; color: var(--color-text-main); margin-bottom: var(--space-5);"></div>
+
+        <!-- Links Container -->
+        <div id="modal-links-section" style="border-top: 1px solid var(--color-border); padding-top: var(--space-4); display: none;">
+          <h3 style="font-size: var(--font-size-sm); font-weight: 600; margin-bottom: var(--space-2);">Official Links &amp; Resources:</h3>
+          <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+            <a id="modal-source-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: none; justify-content: flex-start;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              View Official Source Link
+            </a>
+            <a id="modal-attachment-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: none; justify-content: flex-start;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+              Download Attached Document / PDF
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <a id="modal-direct-page-link" href="#" class="btn btn-secondary btn-sm">Open in Full Page</a>
+        <button type="button" id="modal-dismiss-btn" class="btn btn-primary btn-sm">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Site Footer
+       ======================================================================== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-disclaimer">
+        <strong>CampusNotice Portal</strong> — Centralized College Announcements.
+        <br>
+        Developed for College Skill Lab Project. Academic announcements are retrieved from the verified backend.
+      </div>
+      <div>
+        <span>Backend API Status: <span id="footer-api-status" style="font-weight: 600;">Checking...</span></span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts: Vanilla ES Modules -->
+  <script type="module" src="js/announcements.js"></script>
+</body>
+</html>
