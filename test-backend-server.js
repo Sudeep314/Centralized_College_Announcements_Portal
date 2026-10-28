@@ -143,7 +143,7 @@ const server = http.createServer(async (req, res) => {
       const { username, password } = body;
 
       // Acceptance: username 'admin' and password 'admin123' (or any non-empty username/password for demo)
-      if (username === 'admin' && password === 'admin123') {
+      if (username === 'admin' && (password === 'Admin@123' || password === 'admin123')) {
         return sendJson(res, 200, {
           success: true,
           token: 'cn-test-jwt-token-' + Date.now(),
@@ -152,7 +152,7 @@ const server = http.createServer(async (req, res) => {
       } else {
         return sendJson(res, 401, {
           success: false,
-          message: 'Invalid username or password. Default demo credentials: admin / admin123'
+          message: 'Invalid username or password. Default demo credentials: admin / Admin@123'
         });
       }
     } catch {
@@ -295,6 +295,6 @@ server.listen(PORT, () => {
   console.log(`CampusNotice Test API Server running on port ${PORT}`);
   console.log(`Base URL: http://localhost:${PORT}/api`);
   console.log(`Health:   http://localhost:${PORT}/api/health`);
-  console.log(`Demo credentials: admin / admin123`);
+  console.log(`Demo credentials: admin / Admin@123`);
   console.log(`====================================================`);
 });
