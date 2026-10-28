@@ -20,7 +20,6 @@ export const getAnnouncements = async (req, res, next) => {
 
     // 1. Category filter
     if (category && category.trim() !== '') {
-      // Validate category if provided
       const validCategories = ['Academics', 'Examinations', 'Events', 'General'];
       if (!validCategories.includes(category)) {
         return res.status(400).json({
@@ -46,7 +45,7 @@ export const getAnnouncements = async (req, res, next) => {
     const sortOptions = {
       pinned: -1,
       publishedAt: sortDirection,
-      _id: -1, // Stable secondary sort
+      _id: sortDirection, // Stable secondary sort
     };
 
     // 4. Pagination calculations
@@ -60,8 +59,7 @@ export const getAnnouncements = async (req, res, next) => {
       Announcement.find(query)
         .sort(sortOptions)
         .skip(skip)
-        .limit(limitNumber)
-        .lean(),
+        .limit(limitNumber),
     ]);
 
     const totalPages = Math.ceil(total / limitNumber);
@@ -89,7 +87,7 @@ export const getAnnouncements = async (req, res, next) => {
  */
 export const getAnnouncementById = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
     const announcement = await Announcement.findById(id);
 
     if (!announcement) {
@@ -127,7 +125,7 @@ export const createAnnouncement = async (req, res, next) => {
       pinned,
     } = req.body;
 
-    const newAnnouncement = await Announcement.create({
+    const newAnnouncement = new Announcement({
       title,
       description,
       category,
@@ -138,10 +136,12 @@ export const createAnnouncement = async (req, res, next) => {
       pinned: typeof pinned === 'boolean' ? pinned : false,
     });
 
+    const savedAnnouncement = await newAnnouncement.save();
+
     res.status(201).json({
       success: true,
       message: 'Announcement created successfully',
-      data: newAnnouncement,
+      data: savedAnnouncement,
     });
   } catch (error) {
     next(error);
@@ -155,7 +155,7 @@ export const createAnnouncement = async (req, res, next) => {
  */
 export const updateAnnouncement = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
 
     const existingAnnouncement = await Announcement.findById(id);
     if (!existingAnnouncement) {
@@ -205,7 +205,7 @@ export const updateAnnouncement = async (req, res, next) => {
  */
 export const deleteAnnouncement = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
 
     const announcement = await Announcement.findByIdAndDelete(id);
 

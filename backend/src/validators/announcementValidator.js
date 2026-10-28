@@ -84,8 +84,9 @@ export const createAnnouncementValidator = [
  */
 export const updateAnnouncementValidator = [
   param('id')
-    .isMongoId()
-    .withMessage('Invalid announcement ID format. Must be a 24-character hexadecimal MongoDB ObjectId'),
+    .isInt({ min: 1 })
+    .withMessage('Announcement ID must be a positive integer (e.g. 1, 2, 3)')
+    .toInt(),
 
   body('title')
     .optional()
@@ -147,7 +148,8 @@ export const updateAnnouncementValidator = [
  */
 export const validateAnnouncementId = [
   param('id')
-    .isMongoId()
-    .withMessage('Invalid announcement ID format. Must be a 24-character hexadecimal MongoDB ObjectId'),
+    .isInt({ min: 1 })
+    .withMessage('Announcement ID must be a positive integer (e.g. 1, 2, 3)')
+    .toInt(),
   handleValidationErrors,
 ];

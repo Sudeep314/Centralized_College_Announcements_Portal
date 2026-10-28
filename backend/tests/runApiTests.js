@@ -18,7 +18,7 @@ export const runTests = async () => {
   let passedCount = 0;
   let totalCount = 14;
   let adminToken = '';
-  let createdId = '';
+  let createdId = null;
 
   try {
     // 1. Health check
@@ -56,12 +56,11 @@ export const runTests = async () => {
     if (p5) passedCount++;
     logResult(5, 'Sort and Paginate (limit=2, sort=oldest)', p5, `Returned: ${j5.data.length}`);
 
-    // 6. Retrieve one announcement (if exists) or will test after create
-    // Let's do 7. Admin Login first to get token
+    // 7. Admin Login (Username: admin, Password: Admin@123)
     const r7 = await fetch(`${BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'admin123' }),
+      body: JSON.stringify({ username: 'admin', password: 'Admin@123' }),
     });
     const j7 = await r7.json();
     const p7 = r7.status === 200 && j7.data?.token !== undefined;
@@ -69,9 +68,9 @@ export const runTests = async () => {
       adminToken = j7.data.token;
       passedCount++;
     }
-    logResult(7, 'Admin Login', p7, `Token received: ${Boolean(adminToken)}`);
+    logResult(7, 'Admin Login (admin / Admin@123)', p7, `Token received: ${Boolean(adminToken)}`);
 
-    // 8. Create announcement (Protected)
+    // 8. Create announcement (Protected) -> will receive clean auto-incremented ID (e.g. 9)
     const r8 = await fetch(`${BASE_URL}/announcements`, {
       method: 'POST',
       headers: {
@@ -87,21 +86,21 @@ export const runTests = async () => {
       }),
     });
     const j8 = await r8.json();
-    const p8 = r8.status === 201 && j8.data?._id !== undefined;
+    const p8 = r8.status === 201 && typeof j8.data?._id === 'number';
     if (p8) {
       createdId = j8.data._id;
       passedCount++;
     }
-    logResult(8, 'Create Announcement (Protected)', p8, `Created ID: ${createdId}`);
+    logResult(8, 'Create Announcement (Auto Numeric ID)', p8, `Created clean ID: ${createdId}`);
 
-    // 6. Retrieve single announcement by ID
-    const r6 = await fetch(`${BASE_URL}/announcements/${createdId}`);
+    // 6. Retrieve single announcement by clean ID (e.g. ID 1 or createdId)
+    const r6 = await fetch(`${BASE_URL}/announcements/1`);
     const j6 = await r6.json();
-    const p6 = r6.status === 200 && j6.data?._id === createdId;
+    const p6 = r6.status === 200 && j6.data?._id === 1;
     if (p6) passedCount++;
-    logResult(6, 'Retrieve Single Announcement', p6, `Title: ${j6.data?.title?.substring(0, 30)}...`);
+    logResult(6, 'Retrieve Single Announcement (ID: 1)', p6, `Title: ${j6.data?.title?.substring(0, 30)}...`);
 
-    // 9. Update announcement (Protected)
+    // 9. Update announcement by clean ID
     const r9 = await fetch(`${BASE_URL}/announcements/${createdId}`, {
       method: 'PUT',
       headers: {
@@ -116,9 +115,9 @@ export const runTests = async () => {
     const j9 = await r9.json();
     const p9 = r9.status === 200 && j9.data?.title === 'Updated Mid-Semester Hackathon 2026';
     if (p9) passedCount++;
-    logResult(9, 'Update Announcement (Protected)', p9, `New Title verified`);
+    logResult(9, 'Update Announcement (ID: ' + createdId + ')', p9, `New Title verified`);
 
-    // 10. Delete announcement (Protected)
+    // 10. Delete announcement by clean ID
     const r10 = await fetch(`${BASE_URL}/announcements/${createdId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${adminToken}` },
@@ -126,7 +125,7 @@ export const runTests = async () => {
     const j10 = await r10.json();
     const p10 = r10.status === 200 && j10.success === true;
     if (p10) passedCount++;
-    logResult(10, 'Delete Announcement (Protected)', p10, `Status: ${r10.status}`);
+    logResult(10, 'Delete Announcement (ID: ' + createdId + ')', p10, `Status: ${r10.status}`);
 
     // 11. Validation Failure (Invalid input)
     const r11 = await fetch(`${BASE_URL}/announcements`, {
@@ -146,12 +145,12 @@ export const runTests = async () => {
     if (p11) passedCount++;
     logResult(11, 'Validation Failure Handling', p11, `Expected 400, got ${r11.status}`);
 
-    // 12. Nonexistent Announcement ID (404)
-    const r12 = await fetch(`${BASE_URL}/announcements/507f1f77bcf86cd799439011`);
+    // 12. Nonexistent Announcement ID (ID 99999 -> 404)
+    const r12 = await fetch(`${BASE_URL}/announcements/99999`);
     const j12 = await r12.json();
     const p12 = r12.status === 404 && j12.success === false;
     if (p12) passedCount++;
-    logResult(12, 'Nonexistent ID (404)', p12, `Status: ${r12.status}`);
+    logResult(12, 'Nonexistent Clean ID (ID: 99999 -> 404)', p12, `Status: ${r12.status}`);
 
     // 13. Write without token (401)
     const r13 = await fetch(`${BASE_URL}/announcements`, {

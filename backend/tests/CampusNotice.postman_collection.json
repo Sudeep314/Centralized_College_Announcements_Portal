@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "c8a41bf2-e923-4f9e-bc48-d3e923e1f001",
     "name": "CampusNotice API Tests (Skill Lab)",
-    "description": "Complete test suite for CampusNotice backend API covering health check, public browsing, filtering, search, sorting, pagination, admin authentication, protected CRUD, validation, and error edge cases.",
+    "description": "Complete test suite for CampusNotice backend API covering health check, public browsing, filtering, search, sorting, pagination, admin authentication (admin / Admin@123), protected CRUD with clean numeric IDs (1, 2, 3...), validation, and error edge cases.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -18,7 +18,7 @@
     },
     {
       "key": "createdId",
-      "value": "",
+      "value": "1",
       "type": "string"
     }
   ],
@@ -46,7 +46,7 @@
           "host": ["{{baseUrl}}"],
           "path": ["announcements"]
         },
-        "description": "Expected Status: 200 OK. Returns paginated list of announcements with pinned notices on top."
+        "description": "Expected Status: 200 OK. Returns paginated list of announcements with pinned notices on top and clean IDs (1, 2, 3...)."
       }
     },
     {
@@ -115,20 +115,20 @@
       }
     },
     {
-      "name": "06. Retrieve One Announcement by ID",
+      "name": "06. Retrieve Announcement by Clean ID (ID: 1)",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/announcements/{{createdId}}",
+          "raw": "{{baseUrl}}/announcements/1",
           "host": ["{{baseUrl}}"],
-          "path": ["announcements", "{{createdId}}"]
+          "path": ["announcements", "1"]
         },
-        "description": "Expected Status: 200 OK. Retrieves a single announcement document by its 24-character hexadecimal MongoDB ObjectId."
+        "description": "Expected Status: 200 OK. Retrieves announcement by clean ID 1."
       }
     },
     {
-      "name": "07. Admin Login (Obtain JWT)",
+      "name": "07. Admin Login (admin / Admin@123)",
       "event": [
         {
           "listen": "test",
@@ -154,18 +154,18 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin@123\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/auth/login",
           "host": ["{{baseUrl}}"],
           "path": ["auth", "login"]
         },
-        "description": "Expected Status: 200 OK. Returns signed JWT token for admin write authorization."
+        "description": "Expected Status: 200 OK. Logs in with credentials admin / Admin@123 and saves JWT."
       }
     },
     {
-      "name": "08. Create Announcement (Protected)",
+      "name": "08. Create Announcement (Auto-Increment Clean ID)",
       "event": [
         {
           "listen": "test",
@@ -173,7 +173,7 @@
             "exec": [
               "const jsonData = pm.response.json();",
               "if (jsonData.success && jsonData.data && jsonData.data._id) {",
-              "    pm.collectionVariables.set('createdId', jsonData.data._id);",
+              "    pm.collectionVariables.set('createdId', String(jsonData.data._id));",
               "    console.log('Saved createdId:', jsonData.data._id);",
               "}"
             ],
@@ -202,11 +202,11 @@
           "host": ["{{baseUrl}}"],
           "path": ["announcements"]
         },
-        "description": "Expected Status: 201 Created. Creates a new announcement and returns the saved document."
+        "description": "Expected Status: 201 Created. Creates a new announcement with an auto-incremented clean ID."
       }
     },
     {
-      "name": "09. Update Announcement (Protected)",
+      "name": "09. Update Announcement (Clean ID)",
       "request": {
         "method": "PUT",
         "header": [
@@ -228,11 +228,11 @@
           "host": ["{{baseUrl}}"],
           "path": ["announcements", "{{createdId}}"]
         },
-        "description": "Expected Status: 200 OK. Updates specific fields of an announcement."
+        "description": "Expected Status: 200 OK. Updates announcement using its clean numeric ID."
       }
     },
     {
-      "name": "10. Delete Announcement (Protected)",
+      "name": "10. Delete Announcement (Clean ID)",
       "request": {
         "method": "DELETE",
         "header": [
@@ -276,14 +276,14 @@
       }
     },
     {
-      "name": "12. Nonexistent Announcement ID",
+      "name": "12. Nonexistent Announcement Clean ID (ID: 99999)",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/announcements/507f1f77bcf86cd799439011",
+          "raw": "{{baseUrl}}/announcements/99999",
           "host": ["{{baseUrl}}"],
-          "path": ["announcements", "507f1f77bcf86cd799439011"]
+          "path": ["announcements", "99999"]
         },
         "description": "Expected Status: 404 Not Found. Returns clean error for missing ID."
       }

@@ -101,7 +101,7 @@ Copy-Item .env.example .env
 # On Linux/macOS:
 cp .env.example .env
 ```
-Open `.env` and verify the settings. A working default admin account (`admin` / `admin123`) is pre-configured for local testing.
+Open `.env` and verify the settings. A working default admin account (`admin` / `Admin@123`) is pre-configured for local testing.
 
 ### Step 4: Seed Sample Announcements
 Populate the database with 8 categorized announcements:
@@ -132,7 +132,7 @@ The server will start at `http://localhost:5000`. You can test it by opening `ht
 | `MONGODB_URI` | MongoDB connection URI | `mongodb://127.0.0.1:27017/campusnotice` |
 | `JWT_SECRET` | Secret key used to sign and verify admin JWTs | `campusnotice_skill_lab_jwt_secret_key_2026_super_secure` |
 | `ADMIN_USERNAME`| Username required for administrator login | `admin` |
-| `ADMIN_PASSWORD_HASH` | Bcrypt hash of the admin password | Precomputed hash for `admin123` |
+| `ADMIN_PASSWORD_HASH` | Bcrypt hash of the admin password | Precomputed hash for `Admin@123` |
 | `CLIENT_ORIGIN` | Allowed origin for frontend requests (CORS) | `http://localhost:5500` |
 
 > 💡 **Tip:** To create a new bcrypt password hash for a custom admin password:
@@ -153,8 +153,8 @@ Base URL: **`http://localhost:5000/api`**
 | :--- | :--- | :--- | :--- |
 | `GET` | `/health` or `/api/health` | Public | System status and health check |
 | `GET` | `/api/announcements` | Public | List announcements with search, filter, sort, pagination |
-| `GET` | `/api/announcements/:id` | Public | Get single announcement by MongoDB ObjectId |
-| `POST` | `/api/auth/login` | Public | Admin login; returns signed JWT token |
+| `GET` | `/api/announcements/:id` | Public | Get single announcement by clean numeric ID (e.g. 1, 2, 3) |
+| `POST` | `/api/auth/login` | Public | Admin login (`admin` / `Admin@123`); returns signed JWT token |
 | `POST` | `/api/announcements` | **Admin** | Create a new announcement |
 | `PUT` | `/api/announcements/:id` | **Admin** | Update an existing announcement |
 | `DELETE` | `/api/announcements/:id`| **Admin** | Delete an announcement |
@@ -194,7 +194,8 @@ Base URL: **`http://localhost:5000/api`**
   "message": "Announcements retrieved successfully",
   "data": [
     {
-      "_id": "671f3a2b1f8e9c0012a4b3c1",
+      "_id": 1,
+      "id": 1,
       "title": "Semester End Examination Schedule — Winter 2026",
       "description": "The timetable for Winter 2026 examinations has been released...",
       "category": "Examinations",
@@ -226,7 +227,8 @@ Base URL: **`http://localhost:5000/api`**
   "success": true,
   "message": "Announcement retrieved successfully",
   "data": {
-    "_id": "671f3a2b1f8e9c0012a4b3c1",
+    "_id": 1,
+    "id": 1,
     "title": "Semester End Examination Schedule — Winter 2026",
     "description": "The timetable for Winter 2026 examinations has been released...",
     "category": "Examinations",
@@ -242,7 +244,7 @@ Base URL: **`http://localhost:5000/api`**
 ```json
 {
   "success": false,
-  "message": "Announcement not found with ID: 507f1f77bcf86cd799439011"
+  "message": "Announcement not found with ID: 99999"
 }
 ```
 
@@ -254,7 +256,7 @@ Base URL: **`http://localhost:5000/api`**
 ```json
 {
   "username": "admin",
-  "password": "admin123"
+  "password": "Admin@123"
 }
 ```
 - **Response (200 OK):**

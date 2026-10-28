@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
  * Utility script to hash an admin password using bcrypt.
  * Usage: node tests/generateHash.js <myPassword>
  */
-const passwordToHash = process.argv[2] || 'admin123';
+const passwordToHash = process.argv[2] || 'Admin@123';
 
 const saltRounds = 10;
 const hash = bcrypt.hashSync(passwordToHash, saltRounds);

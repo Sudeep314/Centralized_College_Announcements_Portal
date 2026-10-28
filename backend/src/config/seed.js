@@ -1,11 +1,13 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import Announcement from '../models/Announcement.js';
+import Counter from '../models/Counter.js';
 
 dotenv.config();
 
 const sampleAnnouncements = [
   {
+    _id: 1,
     title: 'Semester End Examination Schedule — Winter 2026',
     description: 'The timetable for the upcoming Winter 2026 Semester End Examinations has been released. All students must download their hall tickets from the student portal before November 10. Direct any clashes or queries to the exam cell.',
     category: 'Examinations',
@@ -16,6 +18,7 @@ const sampleAnnouncements = [
     attachmentUrl: 'https://college.edu/documents/winter_2026_exam_schedule.pdf',
   },
   {
+    _id: 2,
     title: 'Annual Tech Symposium "HackCampus 2026" Registrations Open',
     description: 'Department of Computer Science invites teams to register for HackCampus 2026. A 36-hour hackathon featuring tracks in Web3, AI, and Cloud Computing with cash prizes worth ₹1,00,000.',
     category: 'Events',
@@ -26,6 +29,7 @@ const sampleAnnouncements = [
     attachmentUrl: 'https://college.edu/events/hackcampus_guidelines.pdf',
   },
   {
+    _id: 3,
     title: 'Revised Academic Calendar for Second Semester',
     description: 'Please note the revised academic calendar approved by the Academic Council. Commencement of regular lab practicals will begin from next Monday. Attendance criteria of 75% remains strictly mandatory.',
     category: 'Academics',
@@ -36,6 +40,7 @@ const sampleAnnouncements = [
     attachmentUrl: null,
   },
   {
+    _id: 4,
     title: 'Hostel Maintenance & Electrical Inspection Schedule',
     description: 'Routine maintenance of hostel blocks A, B, and C will be conducted between 10:00 AM and 04:00 PM this Saturday. Power backup will be operational during the outage period.',
     category: 'General',
@@ -46,6 +51,7 @@ const sampleAnnouncements = [
     attachmentUrl: null,
   },
   {
+    _id: 5,
     title: 'Mid-Term Re-Evaluation & Grade Inquiry Window',
     description: 'Students wishing to apply for re-evaluation of Mid-Term test papers must submit the application form along with the prescribed fee receipt to room 204 by Friday.',
     category: 'Examinations',
@@ -56,6 +62,7 @@ const sampleAnnouncements = [
     attachmentUrl: 'https://college.edu/forms/reevaluation_form.pdf',
   },
   {
+    _id: 6,
     title: 'Guest Lecture on Cloud Native Architecture with Kubernetes',
     description: 'The Department of Information Science is hosting an industry session by Principal Architect from Google Cloud. Open to all 3rd and 4th-year engineering students.',
     category: 'Academics',
@@ -66,6 +73,7 @@ const sampleAnnouncements = [
     attachmentUrl: null,
   },
   {
+    _id: 7,
     title: 'Campus Blood Donation & Health Screening Camp',
     description: 'The Youth Red Cross unit of the college is organizing an annual voluntary blood donation drive in the college auditorium. Certificate of appreciation and refreshments provided.',
     category: 'Events',
@@ -76,6 +84,7 @@ const sampleAnnouncements = [
     attachmentUrl: null,
   },
   {
+    _id: 8,
     title: 'Central Library Extended Study Hours During Exam Month',
     description: 'The Central Library reading hall will remain open until midnight (12:00 AM) starting next week to facilitate student exam preparation. Please maintain decorum.',
     category: 'General',
@@ -98,21 +107,26 @@ const seedData = async () => {
     await mongoose.connect(uri);
     console.log('[Seed] Connected to MongoDB');
 
-    // Clear existing sample announcements
+    // Clear existing sample announcements and counter
     await Announcement.deleteMany({});
-    console.log('[Seed] Cleared existing announcements collection');
+    await Counter.deleteMany({});
+    console.log('[Seed] Cleared existing announcements and counters');
 
-    // Insert new sample records
+    // Insert new sample records with numeric IDs 1..8
     const inserted = await Announcement.insertMany(sampleAnnouncements);
-    console.log(`[Seed] Successfully inserted ${inserted.length} sample announcements!`);
+    console.log(`[Seed] Successfully inserted ${inserted.length} sample announcements with clean IDs (1 to ${inserted.length})!`);
+
+    // Initialize sequence counter so next created announcement gets ID 9
+    await Counter.create({ _id: 'announcement_id', seq: inserted.length });
+    console.log(`[Seed] Auto-increment sequence counter set to ${inserted.length}`);
 
     console.log('\n--- Sample Announcements Summary ---');
-    inserted.forEach((a, i) => {
-      console.log(`${i + 1}. [${a.category}] ${a.title} (Pinned: ${a.pinned})`);
+    inserted.forEach((a) => {
+      console.log(`ID: ${a._id} | [${a.category}] ${a.title} (Pinned: ${a.pinned})`);
     });
 
     await mongoose.disconnect();
-    console.log('[Seed] Disconnected from MongoDB. Seeding complete!');
+    console.log('\n[Seed] Disconnected from MongoDB. Seeding complete!');
     process.exit(0);
   } catch (error) {
     console.error(`[Seed Error] ${error.message}`);

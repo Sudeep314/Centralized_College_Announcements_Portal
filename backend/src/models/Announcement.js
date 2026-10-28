@@ -1,9 +1,13 @@
 import mongoose from 'mongoose';
+import Counter from './Counter.js';
 
 const urlRegex = /^(https?:\/\/)[^\s/$.?#].[^\s]*$/i;
 
 const announcementSchema = new mongoose.Schema(
   {
+    _id: {
+      type: Number,
+    },
     title: {
       type: String,
       required: [true, 'Announcement title is required'],
@@ -63,8 +67,37 @@ const announcementSchema = new mongoose.Schema(
   },
   {
     timestamps: true, // Automatically manages createdAt and updatedAt
+    toJSON: {
+      transform: (doc, ret) => {
+        ret.id = ret._id;
+        return ret;
+      },
+    },
+    toObject: {
+      transform: (doc, ret) => {
+        ret.id = ret._id;
+        return ret;
+      },
+    },
   }
 );
+
+// Auto-increment numeric ID (1, 2, 3...) before saving a new announcement
+announcementSchema.pre('save', async function (next) {
+  if (this.isNew && (this._id === undefined || this._id === null)) {
+    try {
+      const counter = await Counter.findByIdAndUpdate(
+        { _id: 'announcement_id' },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      this._id = counter.seq;
+    } catch (err) {
+      return next(err);
+    }
+  }
+  next();
+});
 
 // Indexes for high performance querying
 // Text index for keyword search on title and description

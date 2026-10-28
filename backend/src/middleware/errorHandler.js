@@ -9,10 +9,10 @@ export const errorHandler = (err, req, res, next) => {
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   let message = err.message || 'Internal Server Error';
 
-  // Handle invalid MongoDB ObjectId (CastError)
-  if (err.name === 'CastError' && err.kind === 'ObjectId') {
+  // Handle invalid MongoDB CastError (e.g. invalid numeric ID or format)
+  if (err.name === 'CastError') {
     statusCode = 400;
-    message = `Invalid ID format: '${err.value}' is not a valid MongoDB ObjectId`;
+    message = `Invalid ID format: '${err.value}' is not a valid announcement ID (must be a positive number)`;
   }
 
   // Handle Mongoose schema validation errors
