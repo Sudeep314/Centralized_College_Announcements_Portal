@@ -148,7 +148,7 @@ async function loadAdminAnnouncements() {
   showLoading();
 
   try {
-    const response = await api.getAnnouncements();
+    const response = await api.getAnnouncements({ limit: 100 });
     announcementsCache = response.data || [];
     filterAndRenderTable();
   } catch (err) {

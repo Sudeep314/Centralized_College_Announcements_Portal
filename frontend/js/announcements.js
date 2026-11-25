@@ -133,6 +133,7 @@ async function loadAnnouncements() {
       search: FilterState.search,
       category: FilterState.category,
       sort: FilterState.sort,
+      limit: 100,
     });
 
     allAnnouncementsCache = response.data || [];

@@ -50,7 +50,7 @@ export const getAnnouncements = async (req, res, next) => {
 
     // 4. Pagination calculations
     const pageNumber = Math.max(1, parseInt(page, 10) || 1);
-    const limitNumber = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
+    const limitNumber = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
     const skip = (pageNumber - 1) * limitNumber;
 
     // Execute query with count
