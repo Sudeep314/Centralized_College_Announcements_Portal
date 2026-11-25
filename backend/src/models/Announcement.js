@@ -55,9 +55,9 @@ const announcementSchema = new mongoose.Schema(
       validate: {
         validator: function (v) {
           if (!v) return true;
-          return urlRegex.test(v);
+          return /^(https?:\/\/|data:|(\/)?uploads\/)[^\s]*$/i.test(v);
         },
-        message: 'attachmentUrl must be a valid HTTP or HTTPS URL',
+        message: 'attachmentUrl must be a valid URL or uploaded file path',
       },
     },
     pinned: {

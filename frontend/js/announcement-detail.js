@@ -73,6 +73,31 @@ function renderDetail(item) {
     elements.deadline.style.display = 'none';
   }
 
+  // Image preview if an image is attached
+  let detailImageEl = document.getElementById('detail-image-preview');
+  if (!detailImageEl && elements.desc && elements.desc.parentNode) {
+    detailImageEl = document.createElement('img');
+    detailImageEl.id = 'detail-image-preview';
+    detailImageEl.style.width = '100%';
+    detailImageEl.style.maxHeight = '400px';
+    detailImageEl.style.objectFit = 'contain';
+    detailImageEl.style.borderRadius = 'var(--radius-md, 8px)';
+    detailImageEl.style.marginBottom = 'var(--space-6)';
+    detailImageEl.style.background = '#f8fafc';
+    detailImageEl.style.border = '1px solid var(--color-border)';
+    elements.desc.parentNode.insertBefore(detailImageEl, elements.desc);
+  }
+
+  const isDetailImage = item.attachmentUrl && (/\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(item.attachmentUrl) || item.attachmentUrl.startsWith('data:image/'));
+  if (detailImageEl) {
+    if (isDetailImage) {
+      detailImageEl.src = item.attachmentUrl;
+      detailImageEl.style.display = 'block';
+    } else {
+      detailImageEl.style.display = 'none';
+    }
+  }
+
   // Description
   elements.desc.textContent = item.description || 'No description provided.';
 
@@ -92,6 +117,7 @@ function renderDetail(item) {
   if (safeAttachment) {
     elements.attachmentLink.href = safeAttachment;
     elements.attachmentLink.style.display = 'inline-flex';
+    elements.attachmentLink.textContent = isDetailImage ? '🖼️ View Full Image' : '📄 View Attached Document (PDF)';
     hasLinks = true;
   } else {
     elements.attachmentLink.style.display = 'none';

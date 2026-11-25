@@ -67,8 +67,11 @@ export const createAnnouncementValidator = [
   body('attachmentUrl')
     .optional({ nullable: true, checkFalsy: true })
     .trim()
-    .isURL({ protocols: ['http', 'https'], require_protocol: true })
-    .withMessage('attachmentUrl must be a valid URL starting with http:// or https://'),
+    .custom((val) => {
+      if (!val) return true;
+      if (/^(https?:\/\/|data:|(\/)?uploads\/)[^\s]*$/i.test(val)) return true;
+      throw new Error('attachmentUrl must be a valid URL, uploaded file path, or file data');
+    }),
 
   body('pinned')
     .optional()
@@ -131,8 +134,11 @@ export const updateAnnouncementValidator = [
   body('attachmentUrl')
     .optional({ nullable: true, checkFalsy: true })
     .trim()
-    .isURL({ protocols: ['http', 'https'], require_protocol: true })
-    .withMessage('attachmentUrl must be a valid URL starting with http:// or https://'),
+    .custom((val) => {
+      if (!val) return true;
+      if (/^(https?:\/\/|data:|(\/)?uploads\/)[^\s]*$/i.test(val)) return true;
+      throw new Error('attachmentUrl must be a valid URL, uploaded file path, or file data');
+    }),
 
   body('pinned')
     .optional()

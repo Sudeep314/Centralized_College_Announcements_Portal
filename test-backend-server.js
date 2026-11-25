@@ -205,6 +205,19 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { success: true, data: found });
   }
 
+  // File Upload Endpoint (Mock fallback)
+  if (method === 'POST' && path === '/api/upload') {
+    return sendJson(res, 201, {
+      success: true,
+      message: 'File uploaded successfully',
+      data: {
+        url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800',
+        fileName: 'upload.png',
+        isImage: true,
+      }
+    });
+  }
+
   // 5. POST /api/announcements (Create)
   if (method === 'POST' && path === '/api/announcements') {
     const authHeader = req.headers['authorization'];

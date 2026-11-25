@@ -47,6 +47,17 @@ const elements = {
   formDeadline: document.getElementById('form-deadline'),
   formSourceUrl: document.getElementById('form-source-url'),
   formAttachmentUrl: document.getElementById('form-attachment-url'),
+  formAttachmentValue: document.getElementById('form-attachment-value'),
+  tabUploadFile: document.getElementById('tab-upload-file'),
+  tabLinkUrl: document.getElementById('tab-link-url'),
+  panelUploadFile: document.getElementById('panel-upload-file'),
+  panelLinkUrl: document.getElementById('panel-link-url'),
+  formFileInput: document.getElementById('form-file-input'),
+  uploadPreviewContainer: document.getElementById('upload-preview-container'),
+  uploadImagePreview: document.getElementById('upload-image-preview'),
+  uploadFileInfo: document.getElementById('upload-file-info'),
+  uploadStatusBadge: document.getElementById('upload-status-badge'),
+  clearUploadBtn: document.getElementById('clear-upload-btn'),
   formPinned: document.getElementById('form-pinned'),
   titleError: document.getElementById('title-error'),
   descError: document.getElementById('desc-error'),
@@ -65,6 +76,8 @@ const elements = {
 // Component State
 let announcementsCache = [];
 let itemToDelete = null;
+let selectedAttachmentFile = null;
+let currentAttachmentMode = 'upload'; // 'upload' | 'link'
 
 /**
  * Initializes Admin Dashboard
@@ -87,6 +100,18 @@ function initAdmin() {
   // Search & Category Filter
   elements.searchInput.addEventListener('input', filterAndRenderTable);
   elements.categoryFilter.addEventListener('change', filterAndRenderTable);
+
+  // Attachment Mode & File Listeners
+  if (elements.tabUploadFile && elements.tabLinkUrl) {
+    elements.tabUploadFile.addEventListener('click', () => setAttachmentMode('upload'));
+    elements.tabLinkUrl.addEventListener('click', () => setAttachmentMode('link'));
+  }
+  if (elements.formFileInput) {
+    elements.formFileInput.addEventListener('change', handleFileSelected);
+  }
+  if (elements.clearUploadBtn) {
+    elements.clearUploadBtn.addEventListener('click', clearAttachmentFile);
+  }
 
   // Form Modal Listeners
   elements.announcementForm.addEventListener('submit', handleFormSubmit);
@@ -299,6 +324,74 @@ async function handleTogglePin(item) {
 }
 
 /**
+ * Switches between Direct Upload mode and Link URL mode
+ */
+function setAttachmentMode(mode) {
+  currentAttachmentMode = mode;
+  if (mode === 'upload') {
+    if (elements.panelUploadFile) elements.panelUploadFile.style.display = 'block';
+    if (elements.panelLinkUrl) elements.panelLinkUrl.style.display = 'none';
+    if (elements.tabUploadFile) elements.tabUploadFile.className = 'btn btn-sm btn-primary';
+    if (elements.tabLinkUrl) elements.tabLinkUrl.className = 'btn btn-sm btn-secondary';
+  } else {
+    if (elements.panelUploadFile) elements.panelUploadFile.style.display = 'none';
+    if (elements.panelLinkUrl) elements.panelLinkUrl.style.display = 'block';
+    if (elements.tabUploadFile) elements.tabUploadFile.className = 'btn btn-sm btn-secondary';
+    if (elements.tabLinkUrl) elements.tabLinkUrl.className = 'btn btn-sm btn-primary';
+  }
+}
+
+/**
+ * Handles file selection from local device
+ */
+function handleFileSelected() {
+  const file = elements.formFileInput ? elements.formFileInput.files[0] : null;
+  if (!file) return;
+
+  selectedAttachmentFile = file;
+  if (elements.uploadFileInfo) {
+    elements.uploadFileInfo.textContent = `${file.name} (${Math.round(file.size / 1024)} KB)`;
+  }
+  if (elements.uploadStatusBadge) {
+    elements.uploadStatusBadge.textContent = 'Selected (will upload on save)';
+    elements.uploadStatusBadge.style.color = 'var(--color-primary)';
+  }
+
+  if (elements.uploadImagePreview) {
+    if (file.type.startsWith('image/')) {
+      elements.uploadImagePreview.src = URL.createObjectURL(file);
+      elements.uploadImagePreview.style.display = 'block';
+    } else {
+      elements.uploadImagePreview.style.display = 'none';
+    }
+  }
+
+  if (elements.uploadPreviewContainer) {
+    elements.uploadPreviewContainer.style.display = 'flex';
+  }
+}
+
+/**
+ * Clears current attachment file or link
+ */
+function clearAttachmentFile() {
+  selectedAttachmentFile = null;
+  if (elements.formFileInput) elements.formFileInput.value = '';
+  if (elements.formAttachmentValue) elements.formAttachmentValue.value = '';
+  if (elements.formAttachmentUrl) elements.formAttachmentUrl.value = '';
+  if (elements.uploadImagePreview) {
+    elements.uploadImagePreview.src = '';
+    elements.uploadImagePreview.style.display = 'none';
+  }
+  if (elements.uploadFileInfo) {
+    elements.uploadFileInfo.textContent = '';
+  }
+  if (elements.uploadPreviewContainer) {
+    elements.uploadPreviewContainer.style.display = 'none';
+  }
+}
+
+/**
  * Opens Create Modal
  */
 function openCreateModal() {
@@ -307,6 +400,9 @@ function openCreateModal() {
   elements.announcementForm.reset();
   elements.formCategory.value = 'General';
   
+  clearAttachmentFile();
+  setAttachmentMode('upload');
+
   // Set default publication date to current local datetime
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -345,8 +441,35 @@ function openEditModal(item) {
   }
 
   elements.formSourceUrl.value = item.sourceUrl || '';
-  elements.formAttachmentUrl.value = item.attachmentUrl || '';
   elements.formPinned.checked = Boolean(item.pinned);
+
+  // Initialize attachment preview or link
+  clearAttachmentFile();
+  if (item.attachmentUrl) {
+    if (elements.formAttachmentValue) elements.formAttachmentValue.value = item.attachmentUrl;
+    if (elements.formAttachmentUrl) elements.formAttachmentUrl.value = item.attachmentUrl;
+
+    const isImage = /\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(item.attachmentUrl) || item.attachmentUrl.startsWith('data:image/');
+    if (elements.uploadImagePreview) {
+      if (isImage) {
+        elements.uploadImagePreview.src = item.attachmentUrl;
+        elements.uploadImagePreview.style.display = 'block';
+      } else {
+        elements.uploadImagePreview.style.display = 'none';
+      }
+    }
+
+    if (elements.uploadFileInfo) {
+      elements.uploadFileInfo.textContent = isImage ? 'Attached Image' : 'Attached Document / Link';
+    }
+    if (elements.uploadStatusBadge) {
+      elements.uploadStatusBadge.textContent = 'Attached';
+      elements.uploadStatusBadge.style.color = 'var(--color-success, #16a34a)';
+    }
+    if (elements.uploadPreviewContainer) {
+      elements.uploadPreviewContainer.style.display = 'flex';
+    }
+  }
 
   clearValidationErrors();
   elements.formModal.classList.add('active');
@@ -377,7 +500,6 @@ async function handleFormSubmit(e) {
   const publishedAtRaw = elements.formPublishedAt.value;
   const deadlineRaw = elements.formDeadline.value;
   const sourceUrl = elements.formSourceUrl.value.trim();
-  const attachmentUrl = elements.formAttachmentUrl.value.trim();
   const pinned = elements.formPinned.checked;
 
   // Validation
@@ -394,6 +516,26 @@ async function handleFormSubmit(e) {
   }
 
   if (hasError) return;
+
+  // Resolve Attachment (Direct Upload or Link URL)
+  let attachmentUrl = null;
+  if (selectedAttachmentFile) {
+    elements.saveBtn.disabled = true;
+    elements.saveBtn.textContent = 'Uploading File...';
+    try {
+      const uploadRes = await api.uploadFile(selectedAttachmentFile);
+      attachmentUrl = uploadRes.url;
+    } catch (uploadErr) {
+      showAlert(`Upload failed: ${uploadErr.message}`, 'error');
+      elements.saveBtn.disabled = false;
+      elements.saveBtn.textContent = isEditing ? 'Save Changes' : 'Publish Announcement';
+      return;
+    }
+  } else if (currentAttachmentMode === 'link' && elements.formAttachmentUrl && elements.formAttachmentUrl.value.trim()) {
+    attachmentUrl = elements.formAttachmentUrl.value.trim();
+  } else if (elements.formAttachmentValue && elements.formAttachmentValue.value) {
+    attachmentUrl = elements.formAttachmentValue.value;
+  }
 
   // Prepare payload
   const payload = {

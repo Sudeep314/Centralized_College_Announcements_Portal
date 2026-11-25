@@ -257,6 +257,17 @@ function createAnnouncementCard(item) {
     badgeGroup.appendChild(pinnedBadge);
   }
 
+  // Document Badge indicator if a PDF or doc is attached
+  const isImage = item.attachmentUrl && (/\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(item.attachmentUrl) || item.attachmentUrl.startsWith('data:image/'));
+  const isDoc = item.attachmentUrl && !isImage;
+  if (isDoc) {
+    const docBadge = createElement('span', ['badge'], '📄 PDF / Doc');
+    docBadge.style.background = 'var(--color-surface, #f1f5f9)';
+    docBadge.style.color = 'var(--color-primary, #2563eb)';
+    docBadge.style.border = '1px solid var(--color-border, #cbd5e1)';
+    badgeGroup.appendChild(docBadge);
+  }
+
   // Publication Date
   const dateFormatted = formatDate(item.publishedAt || item.createdAt);
   const dateSpan = createElement('span', 'card-date', dateFormatted);
@@ -264,6 +275,26 @@ function createAnnouncementCard(item) {
   topMeta.appendChild(badgeGroup);
   topMeta.appendChild(dateSpan);
   card.appendChild(topMeta);
+
+  // Optional Image Preview in Card
+  if (isImage) {
+    const imgContainer = createElement('div', 'card-media-wrapper');
+    imgContainer.style.margin = 'var(--space-2) 0 var(--space-3) 0';
+    imgContainer.style.overflow = 'hidden';
+    imgContainer.style.borderRadius = 'var(--radius-sm, 6px)';
+    imgContainer.style.maxHeight = '180px';
+    imgContainer.style.background = '#f8fafc';
+
+    const cardImg = createElement('img');
+    cardImg.src = item.attachmentUrl;
+    cardImg.alt = item.title || 'Announcement Image';
+    cardImg.style.width = '100%';
+    cardImg.style.height = '160px';
+    cardImg.style.objectFit = 'cover';
+    cardImg.style.display = 'block';
+    imgContainer.appendChild(cardImg);
+    card.appendChild(imgContainer);
+  }
 
   // 2. Title
   const title = createElement('h3', 'card-title', item.title || 'Untitled Announcement');
@@ -338,6 +369,31 @@ function openDetailModal(item) {
     elements.modalDeadline.style.display = 'none';
   }
 
+  // Image preview in modal
+  let modalImageEl = document.getElementById('modal-image-preview');
+  if (!modalImageEl && elements.modalDesc && elements.modalDesc.parentNode) {
+    modalImageEl = document.createElement('img');
+    modalImageEl.id = 'modal-image-preview';
+    modalImageEl.style.width = '100%';
+    modalImageEl.style.maxHeight = '320px';
+    modalImageEl.style.objectFit = 'contain';
+    modalImageEl.style.borderRadius = 'var(--radius-sm, 6px)';
+    modalImageEl.style.marginBottom = 'var(--space-4)';
+    modalImageEl.style.background = '#f8fafc';
+    modalImageEl.style.border = '1px solid var(--color-border)';
+    elements.modalDesc.parentNode.insertBefore(modalImageEl, elements.modalDesc);
+  }
+
+  const isModalImage = item.attachmentUrl && (/\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(item.attachmentUrl) || item.attachmentUrl.startsWith('data:image/'));
+  if (modalImageEl) {
+    if (isModalImage) {
+      modalImageEl.src = item.attachmentUrl;
+      modalImageEl.style.display = 'block';
+    } else {
+      modalImageEl.style.display = 'none';
+    }
+  }
+
   // Full Description
   elements.modalDesc.textContent = item.description || 'No description provided.';
 
@@ -357,6 +413,7 @@ function openDetailModal(item) {
   if (safeAttachment) {
     elements.modalAttachmentLink.href = safeAttachment;
     elements.modalAttachmentLink.style.display = 'inline-flex';
+    elements.modalAttachmentLink.textContent = isModalImage ? '🖼️ View Full Image' : '📄 View Attached Document (PDF)';
     hasLinks = true;
   } else {
     elements.modalAttachmentLink.style.display = 'none';

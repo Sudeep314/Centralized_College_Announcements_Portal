@@ -220,6 +220,37 @@ export const api = {
   },
 
   /**
+   * Upload image or document file directly (Admin protected)
+   * POST /upload
+   *
+   * @param {File} file
+   * @returns {Promise<{ url: string, relativePath: string, fileName: string, isImage: boolean }>}
+   */
+  async uploadFile(file) {
+    if (!file) throw new Error('File is required for upload');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = AuthStorage.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.message || 'File upload failed');
+    }
+    return result.data;
+  },
+
+  /**
    * Admin Login
    * Tries POST /auth/login and falls back to POST /admin/login
    *
