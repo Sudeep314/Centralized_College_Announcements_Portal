@@ -267,7 +267,7 @@ function createAnnouncementCard(item) {
     : (item.fileUrl ? [{ url: item.fileUrl, name: 'Attached Document' }] : []);
   const allLinks = Array.isArray(item.links) && item.links.length > 0 
     ? item.links 
-    : (item.attachmentUrl ? [{ url: item.attachmentUrl, label: 'Document Link' }] : []);
+    : (item.attachmentUrl && item.attachmentUrl !== item.fileUrl ? [{ url: item.attachmentUrl, label: 'Document Link' }] : []);
 
   // PDF badge counter
   const pdfCount = allFiles.filter((f) => isPdfUrl(f.url)).length + allLinks.filter((l) => isPdfUrl(l.url)).length;
@@ -402,7 +402,7 @@ function openDetailModal(item) {
     : (item.fileUrl ? [{ url: item.fileUrl, name: 'Attached Document' }] : []);
   const allLinks = Array.isArray(item.links) && item.links.length > 0
     ? item.links
-    : (item.attachmentUrl ? [{ url: item.attachmentUrl, label: 'Document Link' }] : []);
+    : (item.attachmentUrl && item.attachmentUrl !== item.fileUrl ? [{ url: item.attachmentUrl, label: 'Document Link' }] : []);
 
   // Collect image URLs
   const allImages = allFiles.filter((f) => f.isImage || isImg(f.url)).map((f) => f.url);

@@ -464,6 +464,13 @@ function renderLinksList() {
   if (!elements.linksListContainer) return;
   elements.linksListContainer.innerHTML = '';
 
+  if (linksList.length === 0) {
+    const emptyNotice = createElement('div', [], 'No external links added. Click "+ Add Link" above if you want to add one.');
+    emptyNotice.style.cssText = 'font-size: 12px; color: var(--color-text-muted); font-style: italic; padding: 4px 0;';
+    elements.linksListContainer.appendChild(emptyNotice);
+    return;
+  }
+
   linksList.forEach((linkItem, idx) => {
     const row = createElement('div');
     row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
@@ -471,7 +478,7 @@ function renderLinksList() {
     // Label input
     const labelInput = createElement('input', ['form-control']);
     labelInput.type = 'text';
-    labelInput.placeholder = 'Link Label (e.g. Exam Timetable, Guidelines PDF)';
+    labelInput.placeholder = 'Link Label (e.g. Schedule, Portal)';
     labelInput.value = linkItem.label || '';
     labelInput.style.cssText = 'flex: 1; background: #ffffff; font-size: 13px; padding: 6px 10px;';
     labelInput.addEventListener('input', (e) => {
@@ -482,7 +489,7 @@ function renderLinksList() {
     // URL input
     const urlInput = createElement('input', ['form-control']);
     urlInput.type = 'url';
-    urlInput.placeholder = 'https://college.edu/documents/circular.pdf';
+    urlInput.placeholder = 'https://...';
     urlInput.value = linkItem.url || '';
     urlInput.style.cssText = 'flex: 2; background: #ffffff; font-size: 13px; padding: 6px 10px;';
     urlInput.addEventListener('input', (e) => {
@@ -497,7 +504,6 @@ function renderLinksList() {
     removeBtn.style.cssText = 'padding: 6px 10px; font-size: 12px; flex-shrink: 0;';
     removeBtn.addEventListener('click', () => {
       linksList.splice(idx, 1);
-      if (linksList.length === 0) linksList.push({ label: '', url: '' });
       renderLinksList();
     });
     row.appendChild(removeBtn);
@@ -514,10 +520,11 @@ function openCreateModal() {
   elements.formId.value = '';
   elements.announcementForm.reset();
   elements.formCategory.value = 'General';
+  if (elements.formSourceUrl) elements.formSourceUrl.value = '';
   
   selectedNewFiles = [];
   persistedFiles = [];
-  linksList = [{ label: '', url: '' }];
+  linksList = [];
   renderFilesList();
   renderLinksList();
 
@@ -584,13 +591,13 @@ function openEditModal(item) {
   }
   renderFilesList();
 
-  // Initialize multiple links
+  // Initialize multiple links (Do NOT copy uploaded local files into linksList)
   if (item.links && Array.isArray(item.links) && item.links.length > 0) {
     linksList = item.links.map((l) => ({ label: l.label || '', url: l.url || '' }));
-  } else if (item.attachmentUrl) {
+  } else if (item.attachmentUrl && /^https?:\/\//i.test(item.attachmentUrl) && !item.attachmentUrl.includes('/uploads/')) {
     linksList = [{ label: 'Document Link', url: item.attachmentUrl }];
   } else {
-    linksList = [{ label: '', url: '' }];
+    linksList = [];
   }
   renderLinksList();
 
@@ -600,10 +607,18 @@ function openEditModal(item) {
 }
 
 /**
- * Closes Form Modal
+ * Closes Form Modal and completely resets state
  */
 function closeFormModal() {
   elements.formModal.classList.remove('active');
+  elements.announcementForm.reset();
+  elements.formId.value = '';
+  if (elements.formSourceUrl) elements.formSourceUrl.value = '';
+  selectedNewFiles = [];
+  persistedFiles = [];
+  linksList = [];
+  renderFilesList();
+  renderLinksList();
   clearValidationErrors();
 }
 
@@ -670,7 +685,7 @@ async function handleFormSubmit(e) {
 
   // Primary URL references for backward compatibility
   const primaryFileUrl = allUploadedFiles.length > 0 ? allUploadedFiles[0].url : null;
-  const primaryAttachmentUrl = validLinks.length > 0 ? validLinks[0].url : primaryFileUrl;
+  const primaryAttachmentUrl = validLinks.length > 0 ? validLinks[0].url : null;
 
   // Prepare full payload
   const payload = {

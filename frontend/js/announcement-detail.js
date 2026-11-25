@@ -81,7 +81,7 @@ function renderDetail(item) {
     : (item.fileUrl ? [{ url: item.fileUrl, name: 'Attached Document' }] : []);
   const allLinks = Array.isArray(item.links) && item.links.length > 0
     ? item.links
-    : (item.attachmentUrl ? [{ url: item.attachmentUrl, label: 'Document Link' }] : []);
+    : (item.attachmentUrl && item.attachmentUrl !== item.fileUrl ? [{ url: item.attachmentUrl, label: 'Document Link' }] : []);
 
   // PDF badge counter
   const pdfCount = allFiles.filter((f) => isPdf(f.url)).length + allLinks.filter((l) => isPdf(l.url)).length;

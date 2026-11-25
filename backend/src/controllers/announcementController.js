@@ -132,7 +132,7 @@ export const createAnnouncement = async (req, res, next) => {
     const linksArray = Array.isArray(links) ? links : [];
 
     const primaryFileUrl = fileUrl || (filesArray.length > 0 ? filesArray[0].url : null);
-    const primaryAttachmentUrl = attachmentUrl || (linksArray.length > 0 ? linksArray[0].url : primaryFileUrl);
+    const primaryAttachmentUrl = attachmentUrl || (linksArray.length > 0 ? linksArray[0].url : null);
 
     const newAnnouncement = new Announcement({
       title,
