@@ -73,6 +73,15 @@ export const createAnnouncementValidator = [
       throw new Error('attachmentUrl must be a valid URL, uploaded file path, or file data');
     }),
 
+  body('fileUrl')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .custom((val) => {
+      if (!val) return true;
+      if (/^(https?:\/\/|data:|(\/)?uploads\/)[^\s]*$/i.test(val)) return true;
+      throw new Error('fileUrl must be a valid URL or uploaded file path');
+    }),
+
   body('pinned')
     .optional()
     .isBoolean()
@@ -138,6 +147,15 @@ export const updateAnnouncementValidator = [
       if (!val) return true;
       if (/^(https?:\/\/|data:|(\/)?uploads\/)[^\s]*$/i.test(val)) return true;
       throw new Error('attachmentUrl must be a valid URL, uploaded file path, or file data');
+    }),
+
+  body('fileUrl')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .custom((val) => {
+      if (!val) return true;
+      if (/^(https?:\/\/|data:|(\/)?uploads\/)[^\s]*$/i.test(val)) return true;
+      throw new Error('fileUrl must be a valid URL or uploaded file path');
     }),
 
   body('pinned')

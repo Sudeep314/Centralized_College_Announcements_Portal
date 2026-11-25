@@ -122,6 +122,7 @@ export const createAnnouncement = async (req, res, next) => {
       deadline,
       sourceUrl,
       attachmentUrl,
+      fileUrl,
       pinned,
     } = req.body;
 
@@ -133,6 +134,7 @@ export const createAnnouncement = async (req, res, next) => {
       deadline: deadline || null,
       sourceUrl: sourceUrl || null,
       attachmentUrl: attachmentUrl || null,
+      fileUrl: fileUrl || null,
       pinned: typeof pinned === 'boolean' ? pinned : false,
     });
 
@@ -173,6 +175,7 @@ export const updateAnnouncement = async (req, res, next) => {
       deadline,
       sourceUrl,
       attachmentUrl,
+      fileUrl,
       pinned,
     } = req.body;
 
@@ -184,6 +187,7 @@ export const updateAnnouncement = async (req, res, next) => {
     if (deadline !== undefined) existingAnnouncement.deadline = deadline;
     if (sourceUrl !== undefined) existingAnnouncement.sourceUrl = sourceUrl;
     if (attachmentUrl !== undefined) existingAnnouncement.attachmentUrl = attachmentUrl;
+    if (fileUrl !== undefined) existingAnnouncement.fileUrl = fileUrl;
     if (pinned !== undefined) existingAnnouncement.pinned = pinned;
 
     const updatedAnnouncement = await existingAnnouncement.save();

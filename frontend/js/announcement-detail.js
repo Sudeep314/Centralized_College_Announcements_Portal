@@ -19,8 +19,9 @@ const elements = {
   deadline: document.getElementById('detail-deadline'),
   desc: document.getElementById('detail-desc'),
   linksBox: document.getElementById('detail-links-box'),
-  sourceLink: document.getElementById('detail-source-link'),
+  fileLink: document.getElementById('detail-file-link'),
   attachmentLink: document.getElementById('detail-attachment-link'),
+  sourceLink: document.getElementById('detail-source-link'),
 };
 
 async function initDetailPage() {
@@ -88,10 +89,13 @@ function renderDetail(item) {
     elements.desc.parentNode.insertBefore(detailImageEl, elements.desc);
   }
 
-  const isDetailImage = item.attachmentUrl && (/\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(item.attachmentUrl) || item.attachmentUrl.startsWith('data:image/'));
+  const isImg = (url) => url && (/\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(url) || url.startsWith('data:image/'));
+  const isPdf = (url) => url && (/\.pdf($|\?)/i.test(url) || url.startsWith('data:application/pdf'));
+
+  const detailImgCandidate = isImg(item.fileUrl) ? item.fileUrl : (isImg(item.attachmentUrl) ? item.attachmentUrl : null);
   if (detailImageEl) {
-    if (isDetailImage) {
-      detailImageEl.src = item.attachmentUrl;
+    if (detailImgCandidate) {
+      detailImageEl.src = detailImgCandidate;
       detailImageEl.style.display = 'block';
     } else {
       detailImageEl.style.display = 'none';
@@ -101,26 +105,40 @@ function renderDetail(item) {
   // Description
   elements.desc.textContent = item.description || 'No description provided.';
 
-  // Links
-  const safeSource = sanitizeUrl(item.sourceUrl);
+  // Links (Uploaded File, Pasted Link, Official Source)
+  const safeFile = sanitizeUrl(item.fileUrl);
   const safeAttachment = sanitizeUrl(item.attachmentUrl);
+  const safeSource = sanitizeUrl(item.sourceUrl);
   let hasLinks = false;
 
-  if (safeSource) {
-    elements.sourceLink.href = safeSource;
-    elements.sourceLink.style.display = 'inline-flex';
+  // 1. Uploaded File
+  if (safeFile && elements.fileLink) {
+    elements.fileLink.href = safeFile;
+    elements.fileLink.style.display = 'inline-flex';
+    elements.fileLink.textContent = isPdf(safeFile) ? '📄 View Uploaded PDF' : '🖼️ View Uploaded Image';
     hasLinks = true;
-  } else {
-    elements.sourceLink.style.display = 'none';
+  } else if (elements.fileLink) {
+    elements.fileLink.style.display = 'none';
   }
 
-  if (safeAttachment) {
+  // 2. Pasted Link
+  if (safeAttachment && safeAttachment !== safeFile && elements.attachmentLink) {
     elements.attachmentLink.href = safeAttachment;
     elements.attachmentLink.style.display = 'inline-flex';
-    elements.attachmentLink.textContent = isDetailImage ? '🖼️ View Full Image' : '📄 View Attached Document (PDF)';
+    elements.attachmentLink.textContent = isImg(safeAttachment) ? '🖼️ Open Image Link' : '🔗 Open PDF / Document Link';
     hasLinks = true;
-  } else {
+  } else if (elements.attachmentLink) {
     elements.attachmentLink.style.display = 'none';
+  }
+
+  // 3. Official Source
+  if (safeSource && elements.sourceLink) {
+    elements.sourceLink.href = safeSource;
+    elements.sourceLink.style.display = 'inline-flex';
+    elements.sourceLink.textContent = '🌐 Open Official Source Link';
+    hasLinks = true;
+  } else if (elements.sourceLink) {
+    elements.sourceLink.style.display = 'none';
   }
 
   elements.linksBox.style.display = hasLinks ? 'block' : 'none';

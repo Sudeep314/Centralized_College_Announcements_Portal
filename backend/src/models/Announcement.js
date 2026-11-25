@@ -60,6 +60,18 @@ const announcementSchema = new mongoose.Schema(
         message: 'attachmentUrl must be a valid URL or uploaded file path',
       },
     },
+    fileUrl: {
+      type: String,
+      trim: true,
+      default: null,
+      validate: {
+        validator: function (v) {
+          if (!v) return true;
+          return /^(https?:\/\/|data:|(\/)?uploads\/)[^\s]*$/i.test(v);
+        },
+        message: 'fileUrl must be a valid URL or uploaded file path',
+      },
+    },
     pinned: {
       type: Boolean,
       default: false,

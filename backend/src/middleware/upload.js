@@ -31,10 +31,10 @@ export const upload = multer({
   storage,
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB max file size
   fileFilter: (req, file, cb) => {
-    const allowed = /\.(jpe?g|png|gif|webp|svg|pdf|docx?|txt)$/i;
+    const allowed = /\.(pdf|jpe?g|png|gif|webp|svg)$/i;
     if (allowed.test(file.originalname)) {
       return cb(null, true);
     }
-    cb(new Error('Only images (JPEG, PNG, GIF, WebP, SVG) and documents (PDF, DOC, DOCX, TXT) are allowed'));
+    cb(new Error('Only PDF files (.pdf) and images (JPEG, PNG, GIF, WebP, SVG) are allowed'));
   },
 });
