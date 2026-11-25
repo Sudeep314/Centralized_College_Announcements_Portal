@@ -123,8 +123,16 @@ export const createAnnouncement = async (req, res, next) => {
       sourceUrl,
       attachmentUrl,
       fileUrl,
+      files,
+      links,
       pinned,
     } = req.body;
+
+    const filesArray = Array.isArray(files) ? files : [];
+    const linksArray = Array.isArray(links) ? links : [];
+
+    const primaryFileUrl = fileUrl || (filesArray.length > 0 ? filesArray[0].url : null);
+    const primaryAttachmentUrl = attachmentUrl || (linksArray.length > 0 ? linksArray[0].url : primaryFileUrl);
 
     const newAnnouncement = new Announcement({
       title,
@@ -133,8 +141,10 @@ export const createAnnouncement = async (req, res, next) => {
       publishedAt: publishedAt || Date.now(),
       deadline: deadline || null,
       sourceUrl: sourceUrl || null,
-      attachmentUrl: attachmentUrl || null,
-      fileUrl: fileUrl || null,
+      attachmentUrl: primaryAttachmentUrl || null,
+      fileUrl: primaryFileUrl || null,
+      files: filesArray,
+      links: linksArray,
       pinned: typeof pinned === 'boolean' ? pinned : false,
     });
 
@@ -176,6 +186,8 @@ export const updateAnnouncement = async (req, res, next) => {
       sourceUrl,
       attachmentUrl,
       fileUrl,
+      files,
+      links,
       pinned,
     } = req.body;
 
@@ -188,6 +200,18 @@ export const updateAnnouncement = async (req, res, next) => {
     if (sourceUrl !== undefined) existingAnnouncement.sourceUrl = sourceUrl;
     if (attachmentUrl !== undefined) existingAnnouncement.attachmentUrl = attachmentUrl;
     if (fileUrl !== undefined) existingAnnouncement.fileUrl = fileUrl;
+    if (files !== undefined) {
+      existingAnnouncement.files = Array.isArray(files) ? files : [];
+      if (!existingAnnouncement.fileUrl && existingAnnouncement.files.length > 0) {
+        existingAnnouncement.fileUrl = existingAnnouncement.files[0].url;
+      }
+    }
+    if (links !== undefined) {
+      existingAnnouncement.links = Array.isArray(links) ? links : [];
+      if (!existingAnnouncement.attachmentUrl && existingAnnouncement.links.length > 0) {
+        existingAnnouncement.attachmentUrl = existingAnnouncement.links[0].url;
+      }
+    }
     if (pinned !== undefined) existingAnnouncement.pinned = pinned;
 
     const updatedAnnouncement = await existingAnnouncement.save();

@@ -55,11 +55,10 @@ const elements = {
   modalTitle: document.getElementById('modal-announcement-title'),
   modalPublished: document.getElementById('modal-published'),
   modalDeadline: document.getElementById('modal-deadline'),
+  modalGalleryContainer: document.getElementById('modal-gallery-container'),
   modalDesc: document.getElementById('modal-announcement-desc'),
   modalLinksSection: document.getElementById('modal-links-section'),
-  modalFileLink: document.getElementById('modal-file-link'),
-  modalAttachmentLink: document.getElementById('modal-attachment-link'),
-  modalSourceLink: document.getElementById('modal-source-link'),
+  modalResourcesList: document.getElementById('modal-resources-list'),
   modalCloseBtn: document.getElementById('modal-close-btn'),
   modalDismissBtn: document.getElementById('modal-dismiss-btn'),
   modalDirectPageLink: document.getElementById('modal-direct-page-link'),
@@ -258,17 +257,38 @@ function createAnnouncementCard(item) {
     badgeGroup.appendChild(pinnedBadge);
   }
 
-  // Document Badge indicator if a PDF or doc is attached
+  // Document & Image Badges
   const isImageUrl = (url) => url && (/\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(url) || url.startsWith('data:image/'));
   const isPdfUrl = (url) => url && (/\.pdf($|\?)/i.test(url) || url.startsWith('data:application/pdf'));
 
-  const hasPdf = isPdfUrl(item.fileUrl) || isPdfUrl(item.attachmentUrl);
-  if (hasPdf) {
-    const docBadge = createElement('span', ['badge'], '📄 PDF Attached');
+  const allFiles = Array.isArray(item.files) && item.files.length > 0 
+    ? item.files 
+    : (item.fileUrl ? [{ url: item.fileUrl, name: 'Attached Document' }] : []);
+  const allLinks = Array.isArray(item.links) && item.links.length > 0 
+    ? item.links 
+    : (item.attachmentUrl ? [{ url: item.attachmentUrl, label: 'Document Link' }] : []);
+
+  // PDF badge counter
+  const pdfCount = allFiles.filter((f) => isPdfUrl(f.url)).length + allLinks.filter((l) => isPdfUrl(l.url)).length;
+  if (pdfCount > 0) {
+    const docBadge = createElement('span', ['badge'], pdfCount > 1 ? `📄 ${pdfCount} PDFs` : '📄 PDF Attached');
     docBadge.style.background = '#fef2f2';
     docBadge.style.color = '#dc2626';
     docBadge.style.border = '1px solid #fecaca';
     badgeGroup.appendChild(docBadge);
+  }
+
+  // Image count badge
+  const allImages = allFiles.filter((f) => f.isImage || isImageUrl(f.url)).map((f) => f.url);
+  if (allImages.length === 0 && isImageUrl(item.fileUrl)) allImages.push(item.fileUrl);
+  if (allImages.length === 0 && isImageUrl(item.attachmentUrl)) allImages.push(item.attachmentUrl);
+
+  if (allImages.length > 1) {
+    const imgBadge = createElement('span', ['badge'], `🖼️ ${allImages.length} Images`);
+    imgBadge.style.background = '#eff6ff';
+    imgBadge.style.color = '#1d4ed8';
+    imgBadge.style.border = '1px solid #bfdbfe';
+    badgeGroup.appendChild(imgBadge);
   }
 
   // Publication Date
@@ -279,9 +299,8 @@ function createAnnouncementCard(item) {
   topMeta.appendChild(dateSpan);
   card.appendChild(topMeta);
 
-  // Optional Image Preview in Card
-  const imgCandidate = isImageUrl(item.fileUrl) ? item.fileUrl : (isImageUrl(item.attachmentUrl) ? item.attachmentUrl : null);
-  if (imgCandidate) {
+  // Optional Image Preview in Card (first image)
+  if (allImages.length > 0) {
     const imgContainer = createElement('div', 'card-media-wrapper');
     imgContainer.style.margin = 'var(--space-2) 0 var(--space-3) 0';
     imgContainer.style.overflow = 'hidden';
@@ -290,7 +309,7 @@ function createAnnouncementCard(item) {
     imgContainer.style.background = '#f8fafc';
 
     const cardImg = createElement('img');
-    cardImg.src = imgCandidate;
+    cardImg.src = allImages[0];
     cardImg.alt = item.title || 'Announcement Image';
     cardImg.style.width = '100%';
     cardImg.style.height = '160px';
@@ -373,75 +392,144 @@ function openDetailModal(item) {
     elements.modalDeadline.style.display = 'none';
   }
 
-  // Image preview in modal
-  let modalImageEl = document.getElementById('modal-image-preview');
-  if (!modalImageEl && elements.modalDesc && elements.modalDesc.parentNode) {
-    modalImageEl = document.createElement('img');
-    modalImageEl.id = 'modal-image-preview';
-    modalImageEl.style.width = '100%';
-    modalImageEl.style.maxHeight = '320px';
-    modalImageEl.style.objectFit = 'contain';
-    modalImageEl.style.borderRadius = 'var(--radius-sm, 6px)';
-    modalImageEl.style.marginBottom = 'var(--space-4)';
-    modalImageEl.style.background = '#f8fafc';
-    modalImageEl.style.border = '1px solid var(--color-border)';
-    elements.modalDesc.parentNode.insertBefore(modalImageEl, elements.modalDesc);
-  }
-
+  // 1. Image Gallery Handling
   const isImg = (url) => url && (/\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(url) || url.startsWith('data:image/'));
   const isPdf = (url) => url && (/\.pdf($|\?)/i.test(url) || url.startsWith('data:application/pdf'));
 
-  const modalImgCandidate = isImg(item.fileUrl) ? item.fileUrl : (isImg(item.attachmentUrl) ? item.attachmentUrl : null);
-  if (modalImageEl) {
-    if (modalImgCandidate) {
-      modalImageEl.src = modalImgCandidate;
-      modalImageEl.style.display = 'block';
+  const allFiles = Array.isArray(item.files) && item.files.length > 0
+    ? item.files
+    : (item.fileUrl ? [{ url: item.fileUrl, name: 'Attached Document' }] : []);
+  const allLinks = Array.isArray(item.links) && item.links.length > 0
+    ? item.links
+    : (item.attachmentUrl ? [{ url: item.attachmentUrl, label: 'Document Link' }] : []);
+
+  // Collect image URLs
+  const allImages = allFiles.filter((f) => f.isImage || isImg(f.url)).map((f) => f.url);
+  if (allImages.length === 0 && isImg(item.fileUrl)) allImages.push(item.fileUrl);
+  if (allImages.length === 0 && isImg(item.attachmentUrl)) allImages.push(item.attachmentUrl);
+
+  const gallery = elements.modalGalleryContainer;
+  if (gallery) {
+    gallery.innerHTML = '';
+    if (allImages.length === 1) {
+      const img = createElement('img');
+      img.src = allImages[0];
+      img.alt = item.title || 'Announcement Image';
+      img.style.cssText = 'width: 100%; max-height: 340px; object-fit: contain; border-radius: var(--radius-sm, 6px); background: #f8fafc; border: 1px solid var(--color-border);';
+      gallery.appendChild(img);
+      gallery.style.display = 'block';
+    } else if (allImages.length > 1) {
+      const mainImg = createElement('img');
+      mainImg.src = allImages[0];
+      mainImg.alt = item.title || 'Announcement Image';
+      mainImg.style.cssText = 'width: 100%; max-height: 300px; object-fit: contain; border-radius: var(--radius-sm, 6px); background: #f8fafc; border: 1px solid var(--color-border); margin-bottom: 8px;';
+      gallery.appendChild(mainImg);
+
+      const thumbsRow = createElement('div');
+      thumbsRow.style.cssText = 'display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;';
+      allImages.forEach((imgUrl, idx) => {
+        const thumb = createElement('img');
+        thumb.src = imgUrl;
+        thumb.alt = `Thumbnail ${idx + 1}`;
+        thumb.style.cssText = `width: 56px; height: 56px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid ${idx === 0 ? 'var(--color-primary)' : 'transparent'}; flex-shrink: 0;`;
+        thumb.addEventListener('click', () => {
+          mainImg.src = imgUrl;
+          Array.from(thumbsRow.children).forEach((t) => (t.style.border = '2px solid transparent'));
+          thumb.style.border = '2px solid var(--color-primary)';
+        });
+        thumbsRow.appendChild(thumb);
+      });
+      gallery.appendChild(thumbsRow);
+      gallery.style.display = 'block';
     } else {
-      modalImageEl.style.display = 'none';
+      gallery.style.display = 'none';
     }
   }
 
-  // Full Description
+  // 2. Full Description
   elements.modalDesc.textContent = item.description || 'No description provided.';
 
-  // Links Section (Direct Upload File, Pasted Link, Official Source)
-  const safeFile = sanitizeUrl(item.fileUrl);
-  const safeAttachment = sanitizeUrl(item.attachmentUrl);
-  const safeSource = sanitizeUrl(item.sourceUrl);
+  // 3. Resources List (All Uploaded PDFs, All External Links, Source URL)
+  const resList = elements.modalResourcesList;
+  if (resList) {
+    resList.innerHTML = '';
+    let hasResources = false;
 
-  let hasLinks = false;
+    // A) Uploaded PDFs and non-image files
+    const nonImageFiles = allFiles.filter((f) => !f.isImage && !isImg(f.url));
+    nonImageFiles.forEach((f) => {
+      const safeUrl = sanitizeUrl(f.url);
+      if (!safeUrl) return;
+      hasResources = true;
+      const rawName = f.name || safeUrl.split('/').pop().split('?')[0];
 
-  // 1. Uploaded File (PDF or Image)
-  if (safeFile && elements.modalFileLink) {
-    elements.modalFileLink.href = safeFile;
-    elements.modalFileLink.style.display = 'inline-flex';
-    elements.modalFileLink.textContent = isPdf(safeFile) ? '📄 View Uploaded PDF' : '🖼️ View Uploaded Image';
-    hasLinks = true;
-  } else if (elements.modalFileLink) {
-    elements.modalFileLink.style.display = 'none';
+      const linkEl = createElement('a', ['btn', 'btn-secondary', 'btn-sm']);
+      linkEl.href = safeUrl;
+      linkEl.target = '_blank';
+      linkEl.rel = 'noopener noreferrer';
+      linkEl.style.cssText = 'display: flex; align-items: center; justify-content: space-between; text-align: left; padding: 8px 12px; gap: 10px; width: 100%;';
+
+      const left = createElement('span');
+      left.style.cssText = 'display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+      left.innerHTML = `<span style="background: #fee2e2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">PDF</span> <strong>${rawName}</strong>`;
+      linkEl.appendChild(left);
+
+      const action = createElement('span', [], 'View / Download ↗');
+      action.style.cssText = 'font-size: 12px; color: var(--color-primary); flex-shrink: 0;';
+      linkEl.appendChild(action);
+
+      resList.appendChild(linkEl);
+    });
+
+    // B) External Links
+    allLinks.forEach((l) => {
+      const safeUrl = sanitizeUrl(l.url);
+      if (!safeUrl) return;
+      hasResources = true;
+      const label = l.label ? l.label.trim() : 'External Document / Link';
+
+      const linkEl = createElement('a', ['btn', 'btn-secondary', 'btn-sm']);
+      linkEl.href = safeUrl;
+      linkEl.target = '_blank';
+      linkEl.rel = 'noopener noreferrer';
+      linkEl.style.cssText = 'display: flex; align-items: center; justify-content: space-between; text-align: left; padding: 8px 12px; gap: 10px; width: 100%;';
+
+      const left = createElement('span');
+      left.style.cssText = 'display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+      left.innerHTML = `<span style="background: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">LINK</span> <strong>${label}</strong>`;
+      linkEl.appendChild(left);
+
+      const action = createElement('span', [], 'Open Link ↗');
+      action.style.cssText = 'font-size: 12px; color: var(--color-primary); flex-shrink: 0;';
+      linkEl.appendChild(action);
+
+      resList.appendChild(linkEl);
+    });
+
+    // C) Official Source URL
+    const safeSource = sanitizeUrl(item.sourceUrl);
+    if (safeSource) {
+      hasResources = true;
+      const sourceEl = createElement('a', ['btn', 'btn-secondary', 'btn-sm']);
+      sourceEl.href = safeSource;
+      sourceEl.target = '_blank';
+      sourceEl.rel = 'noopener noreferrer';
+      sourceEl.style.cssText = 'display: flex; align-items: center; justify-content: space-between; text-align: left; padding: 8px 12px; gap: 10px; width: 100%;';
+
+      const left = createElement('span');
+      left.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+      left.innerHTML = `<span style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">PORTAL</span> <strong>Official Website / Notice Source</strong>`;
+      sourceEl.appendChild(left);
+
+      const action = createElement('span', [], 'Visit Website ↗');
+      action.style.cssText = 'font-size: 12px; color: var(--color-primary); flex-shrink: 0;';
+      sourceEl.appendChild(action);
+
+      resList.appendChild(sourceEl);
+    }
+
+    elements.modalLinksSection.style.display = hasResources ? 'block' : 'none';
   }
-
-  // 2. Pasted Link / Document
-  if (safeAttachment && safeAttachment !== safeFile && elements.modalAttachmentLink) {
-    elements.modalAttachmentLink.href = safeAttachment;
-    elements.modalAttachmentLink.style.display = 'inline-flex';
-    elements.modalAttachmentLink.textContent = isImg(safeAttachment) ? '🖼️ Open Image Link' : '🔗 Open PDF / Document Link';
-    hasLinks = true;
-  } else if (elements.modalAttachmentLink) {
-    elements.modalAttachmentLink.style.display = 'none';
-  }
-
-  // 3. Official Source
-  if (safeSource && elements.modalSourceLink) {
-    elements.modalSourceLink.href = safeSource;
-    elements.modalSourceLink.style.display = 'inline-flex';
-    elements.modalSourceLink.textContent = '🌐 View Official Source Link';
-    hasLinks = true;
-  } else if (elements.modalSourceLink) {
-    elements.modalSourceLink.style.display = 'none';
-  }
-
-  elements.modalLinksSection.style.display = hasLinks ? 'block' : 'none';
 
   // Set direct page link
   const id = item._id || item.id;

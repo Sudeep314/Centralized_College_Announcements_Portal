@@ -72,6 +72,26 @@ const announcementSchema = new mongoose.Schema(
         message: 'fileUrl must be a valid URL or uploaded file path',
       },
     },
+    files: {
+      type: [
+        {
+          url: { type: String, trim: true },
+          name: { type: String, trim: true },
+          isImage: { type: Boolean, default: false },
+          size: { type: Number, default: 0 },
+        },
+      ],
+      default: [],
+    },
+    links: {
+      type: [
+        {
+          url: { type: String, trim: true },
+          label: { type: String, trim: true },
+        },
+      ],
+      default: [],
+    },
     pinned: {
       type: Boolean,
       default: false,

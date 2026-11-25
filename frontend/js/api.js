@@ -220,16 +220,20 @@ export const api = {
   },
 
   /**
-   * Upload image or document file directly (Admin protected)
+   * Upload single or multiple images or PDF documents directly (Admin protected)
    * POST /upload
    *
-   * @param {File} file
-   * @returns {Promise<{ url: string, relativePath: string, fileName: string, isImage: boolean }>}
+   * @param {File|File[]|FileList} files
+   * @returns {Promise<Array<{ url: string, relativePath: string, fileName: string, originalName: string, isImage: boolean, size: number }>>}
    */
-  async uploadFile(file) {
-    if (!file) throw new Error('File is required for upload');
+  async uploadFiles(files) {
+    const fileList = Array.isArray(files) ? files : (files instanceof FileList ? Array.from(files) : [files]);
+    if (!fileList || fileList.length === 0) throw new Error('Files are required for upload');
+
     const formData = new FormData();
-    formData.append('file', file);
+    for (const f of fileList) {
+      formData.append('files', f);
+    }
 
     const token = AuthStorage.getToken();
     const headers = {};
@@ -247,7 +251,19 @@ export const api = {
     if (!response.ok) {
       throw new Error(result.message || 'File upload failed');
     }
-    return result.data;
+    return result.files || (result.data ? [result.data] : []);
+  },
+
+  /**
+   * Upload image or document file directly (Admin protected)
+   * POST /upload
+   *
+   * @param {File} file
+   * @returns {Promise<{ url: string, relativePath: string, fileName: string, isImage: boolean }>}
+   */
+  async uploadFile(file) {
+    const list = await this.uploadFiles([file]);
+    return list[0];
   },
 
   /**

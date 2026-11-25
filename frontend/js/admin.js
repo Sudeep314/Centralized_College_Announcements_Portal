@@ -46,15 +46,11 @@ const elements = {
   formPublishedAt: document.getElementById('form-published-at'),
   formDeadline: document.getElementById('form-deadline'),
   formSourceUrl: document.getElementById('form-source-url'),
-  formAttachmentUrl: document.getElementById('form-attachment-url'),
   formFileInput: document.getElementById('form-file-input'),
-  uploadPreviewContainer: document.getElementById('upload-preview-container'),
-  uploadImagePreview: document.getElementById('upload-image-preview'),
-  uploadPdfIcon: document.getElementById('upload-pdf-icon'),
-  uploadFileInfo: document.getElementById('upload-file-info'),
-  uploadStatusBadge: document.getElementById('upload-status-badge'),
-  clearUploadBtn: document.getElementById('clear-upload-btn'),
-  formFileValue: document.getElementById('form-file-value'),
+  filesCountBadge: document.getElementById('files-count-badge'),
+  uploadFilesList: document.getElementById('upload-files-list'),
+  addLinkBtn: document.getElementById('add-link-btn'),
+  linksListContainer: document.getElementById('links-list-container'),
   formPinned: document.getElementById('form-pinned'),
   titleError: document.getElementById('title-error'),
   descError: document.getElementById('desc-error'),
@@ -73,7 +69,9 @@ const elements = {
 // Component State
 let announcementsCache = [];
 let itemToDelete = null;
-let selectedAttachmentFile = null;
+let selectedNewFiles = []; // Array of local File objects
+let persistedFiles = [];   // Array of { url, name, isImage, size }
+let linksList = [];        // Array of { label, url }
 
 /**
  * Initializes Admin Dashboard
@@ -97,12 +95,12 @@ function initAdmin() {
   elements.searchInput.addEventListener('input', filterAndRenderTable);
   elements.categoryFilter.addEventListener('change', filterAndRenderTable);
 
-  // File Upload Listeners
+  // Multiple Files & Links Listeners
   if (elements.formFileInput) {
-    elements.formFileInput.addEventListener('change', handleFileSelected);
+    elements.formFileInput.addEventListener('change', handleFilesSelected);
   }
-  if (elements.clearUploadBtn) {
-    elements.clearUploadBtn.addEventListener('click', clearAttachmentFile);
+  if (elements.addLinkBtn) {
+    elements.addLinkBtn.addEventListener('click', handleAddLinkRow);
   }
 
   // Form Modal Listeners
@@ -316,65 +314,196 @@ async function handleTogglePin(item) {
 }
 
 /**
- * Handles file selection from local device (PDF or Images only)
+ * Handles multiple file selection from local device (PDF or Images only)
  */
-function handleFileSelected() {
-  const file = elements.formFileInput ? elements.formFileInput.files[0] : null;
-  if (!file) return;
+function handleFilesSelected() {
+  const fileInput = elements.formFileInput;
+  if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
 
-  selectedAttachmentFile = file;
-  const fileName = file.name || 'Selected File';
-  const fileSizeKb = Math.round(file.size / 1024);
+  const filesArray = Array.from(fileInput.files);
+  const allowed = /\.(pdf|jpe?g|png|gif|webp|svg)$/i;
 
-  if (elements.uploadFileInfo) {
-    elements.uploadFileInfo.textContent = `${fileName} (${fileSizeKb} KB)`;
-  }
-  if (elements.uploadStatusBadge) {
-    elements.uploadStatusBadge.textContent = 'Ready to upload on save';
-    elements.uploadStatusBadge.style.color = 'var(--color-primary)';
-  }
-
-  const isPdf = file.type === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf');
-  const isImage = file.type.startsWith('image/');
-
-  if (isImage && elements.uploadImagePreview) {
-    elements.uploadImagePreview.src = URL.createObjectURL(file);
-    elements.uploadImagePreview.style.display = 'block';
-  } else if (elements.uploadImagePreview) {
-    elements.uploadImagePreview.style.display = 'none';
+  let addedCount = 0;
+  for (const f of filesArray) {
+    if (allowed.test(f.name)) {
+      selectedNewFiles.push(f);
+      addedCount++;
+    } else {
+      showAlert(`File "${f.name}" was skipped: only PDF and images are allowed.`, 'error');
+    }
   }
 
-  if (isPdf && elements.uploadPdfIcon) {
-    elements.uploadPdfIcon.style.display = 'flex';
-  } else if (elements.uploadPdfIcon) {
-    elements.uploadPdfIcon.style.display = 'none';
-  }
+  // Reset file input so user can choose more files if desired
+  fileInput.value = '';
 
-  if (elements.uploadPreviewContainer) {
-    elements.uploadPreviewContainer.style.display = 'flex';
+  renderFilesList();
+  if (addedCount > 0) {
+    showAlert(`Added ${addedCount} file(s). They will be uploaded when saving.`, 'success');
   }
 }
 
 /**
- * Clears current uploaded file and preview
+ * Renders list of uploaded & staged files in Admin modal
  */
-function clearAttachmentFile() {
-  selectedAttachmentFile = null;
-  if (elements.formFileInput) elements.formFileInput.value = '';
-  if (elements.formFileValue) elements.formFileValue.value = '';
-  if (elements.uploadImagePreview) {
-    elements.uploadImagePreview.src = '';
-    elements.uploadImagePreview.style.display = 'none';
+function renderFilesList() {
+  if (!elements.uploadFilesList) return;
+  elements.uploadFilesList.innerHTML = '';
+  const totalCount = persistedFiles.length + selectedNewFiles.length;
+
+  if (elements.filesCountBadge) {
+    if (totalCount > 0) {
+      elements.filesCountBadge.textContent = `${totalCount} file${totalCount > 1 ? 's' : ''}`;
+      elements.filesCountBadge.style.display = 'inline-block';
+    } else {
+      elements.filesCountBadge.style.display = 'none';
+    }
   }
-  if (elements.uploadPdfIcon) {
-    elements.uploadPdfIcon.style.display = 'none';
+
+  // 1. Render previously persisted files (from DB)
+  persistedFiles.forEach((fileItem, idx) => {
+    const rawName = fileItem.name || (fileItem.url ? fileItem.url.split('/').pop().split('?')[0] : 'Document');
+    const isImage = Boolean(fileItem.isImage || (fileItem.url && /\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(fileItem.url)));
+    const row = createFileCardRow({
+      name: rawName,
+      sizeText: fileItem.size ? `${Math.round(fileItem.size / 1024)} KB` : '',
+      isImage,
+      previewUrl: fileItem.url,
+      badgeText: 'Saved File',
+      badgeColor: '#16a34a',
+      onRemove: () => {
+        persistedFiles.splice(idx, 1);
+        renderFilesList();
+      },
+    });
+    elements.uploadFilesList.appendChild(row);
+  });
+
+  // 2. Render newly selected local files
+  selectedNewFiles.forEach((file, idx) => {
+    const isImage = file.type.startsWith('image/');
+    const previewUrl = isImage ? URL.createObjectURL(file) : null;
+    const row = createFileCardRow({
+      name: file.name,
+      sizeText: `${Math.round(file.size / 1024)} KB`,
+      isImage,
+      previewUrl,
+      badgeText: 'Ready to upload',
+      badgeColor: 'var(--color-primary, #2563eb)',
+      onRemove: () => {
+        selectedNewFiles.splice(idx, 1);
+        renderFilesList();
+      },
+    });
+    elements.uploadFilesList.appendChild(row);
+  });
+}
+
+/**
+ * Creates a visual card item for a file in the modal list
+ */
+function createFileCardRow({ name, sizeText, isImage, previewUrl, badgeText, badgeColor, onRemove }) {
+  const row = createElement('div');
+  row.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);';
+
+  // Preview thumbnail or PDF icon
+  if (isImage && previewUrl) {
+    const img = createElement('img');
+    img.src = previewUrl;
+    img.alt = name;
+    img.style.cssText = 'width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; flex-shrink: 0;';
+    row.appendChild(img);
+  } else {
+    const pdfIcon = createElement('div', [], 'PDF');
+    pdfIcon.style.cssText = 'width: 44px; height: 44px; background: #fee2e2; color: #dc2626; border-radius: 6px; font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #fecaca;';
+    row.appendChild(pdfIcon);
   }
-  if (elements.uploadFileInfo) {
-    elements.uploadFileInfo.textContent = '';
+
+  // File information
+  const infoCol = createElement('div');
+  infoCol.style.cssText = 'flex: 1; min-width: 0;';
+  const nameEl = createElement('div', [], name);
+  nameEl.style.cssText = 'font-size: 13px; font-weight: 600; color: var(--color-text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+  infoCol.appendChild(nameEl);
+
+  const subLine = createElement('div');
+  subLine.style.cssText = 'display: flex; gap: 8px; font-size: 11px; margin-top: 2px;';
+  if (sizeText) {
+    const sizeEl = createElement('span', [], sizeText);
+    sizeEl.style.color = '#64748b';
+    subLine.appendChild(sizeEl);
   }
-  if (elements.uploadPreviewContainer) {
-    elements.uploadPreviewContainer.style.display = 'none';
-  }
+  const badgeEl = createElement('span', [], badgeText);
+  badgeEl.style.cssText = `font-weight: 500; color: ${badgeColor};`;
+  subLine.appendChild(badgeEl);
+  infoCol.appendChild(subLine);
+  row.appendChild(infoCol);
+
+  // Remove button
+  const delBtn = createElement('button', ['btn', 'btn-danger', 'btn-sm'], '✕ Remove');
+  delBtn.type = 'button';
+  delBtn.title = 'Remove this file';
+  delBtn.style.cssText = 'padding: 4px 8px; font-size: 12px; line-height: 1; flex-shrink: 0;';
+  delBtn.addEventListener('click', onRemove);
+  row.appendChild(delBtn);
+
+  return row;
+}
+
+/**
+ * Adds an empty link row to the external links list
+ */
+function handleAddLinkRow() {
+  linksList.push({ label: '', url: '' });
+  renderLinksList();
+}
+
+/**
+ * Renders all external links input rows
+ */
+function renderLinksList() {
+  if (!elements.linksListContainer) return;
+  elements.linksListContainer.innerHTML = '';
+
+  linksList.forEach((linkItem, idx) => {
+    const row = createElement('div');
+    row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+
+    // Label input
+    const labelInput = createElement('input', ['form-control']);
+    labelInput.type = 'text';
+    labelInput.placeholder = 'Link Label (e.g. Exam Timetable, Guidelines PDF)';
+    labelInput.value = linkItem.label || '';
+    labelInput.style.cssText = 'flex: 1; background: #ffffff; font-size: 13px; padding: 6px 10px;';
+    labelInput.addEventListener('input', (e) => {
+      linkItem.label = e.target.value;
+    });
+    row.appendChild(labelInput);
+
+    // URL input
+    const urlInput = createElement('input', ['form-control']);
+    urlInput.type = 'url';
+    urlInput.placeholder = 'https://college.edu/documents/circular.pdf';
+    urlInput.value = linkItem.url || '';
+    urlInput.style.cssText = 'flex: 2; background: #ffffff; font-size: 13px; padding: 6px 10px;';
+    urlInput.addEventListener('input', (e) => {
+      linkItem.url = e.target.value;
+    });
+    row.appendChild(urlInput);
+
+    // Remove button
+    const removeBtn = createElement('button', ['btn', 'btn-danger', 'btn-sm'], '✕');
+    removeBtn.type = 'button';
+    removeBtn.title = 'Remove this link';
+    removeBtn.style.cssText = 'padding: 6px 10px; font-size: 12px; flex-shrink: 0;';
+    removeBtn.addEventListener('click', () => {
+      linksList.splice(idx, 1);
+      if (linksList.length === 0) linksList.push({ label: '', url: '' });
+      renderLinksList();
+    });
+    row.appendChild(removeBtn);
+
+    elements.linksListContainer.appendChild(row);
+  });
 }
 
 /**
@@ -385,9 +514,12 @@ function openCreateModal() {
   elements.formId.value = '';
   elements.announcementForm.reset();
   elements.formCategory.value = 'General';
-  if (elements.formAttachmentUrl) elements.formAttachmentUrl.value = '';
   
-  clearAttachmentFile();
+  selectedNewFiles = [];
+  persistedFiles = [];
+  linksList = [{ label: '', url: '' }];
+  renderFilesList();
+  renderLinksList();
 
   // Set default publication date to current local datetime
   const now = new Date();
@@ -429,42 +561,38 @@ function openEditModal(item) {
   elements.formSourceUrl.value = item.sourceUrl || '';
   elements.formPinned.checked = Boolean(item.pinned);
 
-  // Initialize both file upload preview and external link input
-  clearAttachmentFile();
-
-  // 1. External link
-  if (elements.formAttachmentUrl) {
-    elements.formAttachmentUrl.value = item.attachmentUrl || '';
+  // Initialize multiple files
+  selectedNewFiles = [];
+  if (item.files && Array.isArray(item.files) && item.files.length > 0) {
+    persistedFiles = item.files.map((f) => ({
+      url: f.url,
+      name: f.name || f.url.split('/').pop().split('?')[0],
+      isImage: Boolean(f.isImage || /\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(f.url)),
+      size: f.size || 0,
+    }));
+  } else if (item.fileUrl) {
+    persistedFiles = [
+      {
+        url: item.fileUrl,
+        name: item.fileUrl.split('/').pop().split('?')[0],
+        isImage: /\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(item.fileUrl),
+        size: 0,
+      },
+    ];
+  } else {
+    persistedFiles = [];
   }
+  renderFilesList();
 
-  // 2. Uploaded file preview (from item.fileUrl or if attachmentUrl points to /uploads/)
-  const fileSource = item.fileUrl || (item.attachmentUrl && (item.attachmentUrl.startsWith('/uploads/') || item.attachmentUrl.startsWith('data:')) ? item.attachmentUrl : null);
-
-  if (fileSource) {
-    if (elements.formFileValue) elements.formFileValue.value = fileSource;
-    const isImage = /\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(fileSource) || fileSource.startsWith('data:image/');
-    const isPdf = /\.pdf($|\?)/i.test(fileSource) || fileSource.startsWith('data:application/pdf');
-
-    if (isImage && elements.uploadImagePreview) {
-      elements.uploadImagePreview.src = fileSource;
-      elements.uploadImagePreview.style.display = 'block';
-    }
-    if (isPdf && elements.uploadPdfIcon) {
-      elements.uploadPdfIcon.style.display = 'flex';
-    }
-
-    if (elements.uploadFileInfo) {
-      const fileName = fileSource.split('/').pop().split('?')[0];
-      elements.uploadFileInfo.textContent = isImage ? `Image: ${fileName}` : `PDF Document: ${fileName}`;
-    }
-    if (elements.uploadStatusBadge) {
-      elements.uploadStatusBadge.textContent = 'Saved File';
-      elements.uploadStatusBadge.style.color = 'var(--color-success, #16a34a)';
-    }
-    if (elements.uploadPreviewContainer) {
-      elements.uploadPreviewContainer.style.display = 'flex';
-    }
+  // Initialize multiple links
+  if (item.links && Array.isArray(item.links) && item.links.length > 0) {
+    linksList = item.links.map((l) => ({ label: l.label || '', url: l.url || '' }));
+  } else if (item.attachmentUrl) {
+    linksList = [{ label: 'Document Link', url: item.attachmentUrl }];
+  } else {
+    linksList = [{ label: '', url: '' }];
   }
+  renderLinksList();
 
   clearValidationErrors();
   elements.formModal.classList.add('active');
@@ -512,15 +640,21 @@ async function handleFormSubmit(e) {
 
   if (hasError) return;
 
-  // Handle direct file upload if a new file is chosen
-  let uploadedFileUrl = elements.formFileValue ? elements.formFileValue.value : null;
+  // Upload any newly selected files
+  let allUploadedFiles = [...persistedFiles];
 
-  if (selectedAttachmentFile) {
+  if (selectedNewFiles.length > 0) {
     elements.saveBtn.disabled = true;
-    elements.saveBtn.textContent = 'Uploading File...';
+    elements.saveBtn.textContent = `Uploading ${selectedNewFiles.length} file(s)...`;
     try {
-      const uploadRes = await api.uploadFile(selectedAttachmentFile);
-      uploadedFileUrl = uploadRes.url;
+      const uploadResList = await api.uploadFiles(selectedNewFiles);
+      const formattedUploads = uploadResList.map((res) => ({
+        url: res.url,
+        name: res.originalName || res.fileName,
+        isImage: Boolean(res.isImage),
+        size: res.size || 0,
+      }));
+      allUploadedFiles = [...allUploadedFiles, ...formattedUploads];
     } catch (uploadErr) {
       showAlert(`Upload failed: ${uploadErr.message}`, 'error');
       elements.saveBtn.disabled = false;
@@ -529,9 +663,16 @@ async function handleFormSubmit(e) {
     }
   }
 
-  const externalLink = elements.formAttachmentUrl ? elements.formAttachmentUrl.value.trim() : '';
+  // Filter valid external links
+  const validLinks = linksList
+    .map((l) => ({ label: l.label ? l.label.trim() : '', url: l.url ? l.url.trim() : '' }))
+    .filter((l) => Boolean(l.url));
 
-  // Prepare payload supporting both uploaded file and pasted link
+  // Primary URL references for backward compatibility
+  const primaryFileUrl = allUploadedFiles.length > 0 ? allUploadedFiles[0].url : null;
+  const primaryAttachmentUrl = validLinks.length > 0 ? validLinks[0].url : primaryFileUrl;
+
+  // Prepare full payload
   const payload = {
     title,
     description,
@@ -540,8 +681,10 @@ async function handleFormSubmit(e) {
     publishedAt: publishedAtRaw ? new Date(publishedAtRaw).toISOString() : new Date().toISOString(),
     deadline: deadlineRaw ? new Date(deadlineRaw).toISOString() : null,
     sourceUrl: sourceUrl || null,
-    fileUrl: uploadedFileUrl || null,
-    attachmentUrl: externalLink || uploadedFileUrl || null,
+    fileUrl: primaryFileUrl,
+    attachmentUrl: primaryAttachmentUrl,
+    files: allUploadedFiles,
+    links: validLinks,
   };
 
   // Set submitting state

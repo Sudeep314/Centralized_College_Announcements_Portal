@@ -5,12 +5,12 @@ import { requireAdmin } from '../middleware/adminAuth.js';
 const router = express.Router();
 
 /**
- * @desc    Upload an image or document directly (Admin only)
+ * @desc    Upload single or multiple images or PDF documents directly (Admin only)
  * @route   POST /api/upload
  * @access  Protected (Admin only)
  */
 router.post('/', requireAdmin, (req, res, next) => {
-  upload.single('file')(req, res, (err) => {
+  upload.any()(req, res, (err) => {
     if (err) {
       return res.status(400).json({
         success: false,
@@ -18,30 +18,37 @@ router.post('/', requireAdmin, (req, res, next) => {
       });
     }
 
-    if (!req.file) {
+    const files = req.files || (req.file ? [req.file] : []);
+
+    if (files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No file uploaded. Please select an image or document to upload.',
+        message: 'No file uploaded. Please select one or more PDF documents or images to upload.',
       });
     }
 
     const host = req.get('host');
     const protocol = req.protocol;
-    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
-    const isImage = /^image\//i.test(req.file.mimetype);
+
+    const uploaded = files.map((file) => {
+      const fileUrl = `${protocol}://${host}/uploads/${file.filename}`;
+      const isImage = /^image\//i.test(file.mimetype);
+      return {
+        url: fileUrl,
+        relativePath: `/uploads/${file.filename}`,
+        originalName: file.originalname,
+        fileName: file.filename,
+        mimetype: file.mimetype,
+        size: file.size,
+        isImage,
+      };
+    });
 
     res.status(201).json({
       success: true,
-      message: 'File uploaded successfully',
-      data: {
-        url: fileUrl,
-        relativePath: `/uploads/${req.file.filename}`,
-        originalName: req.file.originalname,
-        fileName: req.file.filename,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-        isImage,
-      },
+      message: `${uploaded.length} file(s) uploaded successfully`,
+      data: uploaded[0],
+      files: uploaded,
     });
   });
 });

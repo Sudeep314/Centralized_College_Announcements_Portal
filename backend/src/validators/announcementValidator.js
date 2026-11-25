@@ -82,6 +82,16 @@ export const createAnnouncementValidator = [
       throw new Error('fileUrl must be a valid URL or uploaded file path');
     }),
 
+  body('files')
+    .optional({ nullable: true })
+    .isArray()
+    .withMessage('files must be an array of file objects'),
+
+  body('links')
+    .optional({ nullable: true })
+    .isArray()
+    .withMessage('links must be an array of link objects'),
+
   body('pinned')
     .optional()
     .isBoolean()
@@ -157,6 +167,16 @@ export const updateAnnouncementValidator = [
       if (/^(https?:\/\/|data:|(\/)?uploads\/)[^\s]*$/i.test(val)) return true;
       throw new Error('fileUrl must be a valid URL or uploaded file path');
     }),
+
+  body('files')
+    .optional({ nullable: true })
+    .isArray()
+    .withMessage('files must be an array of file objects'),
+
+  body('links')
+    .optional({ nullable: true })
+    .isArray()
+    .withMessage('links must be an array of link objects'),
 
   body('pinned')
     .optional()
