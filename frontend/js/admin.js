@@ -45,7 +45,6 @@ const elements = {
   formDescription: document.getElementById('form-description'),
   formPublishedAt: document.getElementById('form-published-at'),
   formDeadline: document.getElementById('form-deadline'),
-  formSourceUrl: document.getElementById('form-source-url'),
   formFileInput: document.getElementById('form-file-input'),
   filesCountBadge: document.getElementById('files-count-badge'),
   uploadFilesList: document.getElementById('upload-files-list'),
@@ -520,7 +519,6 @@ function openCreateModal() {
   elements.formId.value = '';
   elements.announcementForm.reset();
   elements.formCategory.value = 'General';
-  if (elements.formSourceUrl) elements.formSourceUrl.value = '';
   
   selectedNewFiles = [];
   persistedFiles = [];
@@ -528,7 +526,7 @@ function openCreateModal() {
   renderFilesList();
   renderLinksList();
 
-  // Set default publication date to current local datetime
+  // Auto-set publication date to today's current local datetime (disabled from manual editing)
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   elements.formPublishedAt.value = now.toISOString().slice(0, 16);
@@ -548,13 +546,15 @@ function openEditModal(item) {
   elements.formCategory.value = item.category || 'General';
   elements.formDescription.value = item.description || '';
 
-  // Format dates for datetime-local input
+  // Publication date is auto-filled and locked to maintain chronological consistency
   if (item.publishedAt) {
     const pub = new Date(item.publishedAt);
     pub.setMinutes(pub.getMinutes() - pub.getTimezoneOffset());
     elements.formPublishedAt.value = pub.toISOString().slice(0, 16);
   } else {
-    elements.formPublishedAt.value = '';
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    elements.formPublishedAt.value = now.toISOString().slice(0, 16);
   }
 
   if (item.deadline) {
@@ -565,7 +565,6 @@ function openEditModal(item) {
     elements.formDeadline.value = '';
   }
 
-  elements.formSourceUrl.value = item.sourceUrl || '';
   elements.formPinned.checked = Boolean(item.pinned);
 
   // Initialize multiple files
@@ -613,7 +612,6 @@ function closeFormModal() {
   elements.formModal.classList.remove('active');
   elements.announcementForm.reset();
   elements.formId.value = '';
-  if (elements.formSourceUrl) elements.formSourceUrl.value = '';
   selectedNewFiles = [];
   persistedFiles = [];
   linksList = [];
@@ -637,7 +635,6 @@ async function handleFormSubmit(e) {
   const category = elements.formCategory.value;
   const publishedAtRaw = elements.formPublishedAt.value;
   const deadlineRaw = elements.formDeadline.value;
-  const sourceUrl = elements.formSourceUrl.value.trim();
   const pinned = elements.formPinned.checked;
 
   // Validation
@@ -695,7 +692,7 @@ async function handleFormSubmit(e) {
     pinned,
     publishedAt: publishedAtRaw ? new Date(publishedAtRaw).toISOString() : new Date().toISOString(),
     deadline: deadlineRaw ? new Date(deadlineRaw).toISOString() : null,
-    sourceUrl: sourceUrl || null,
+    sourceUrl: null,
     fileUrl: primaryFileUrl,
     attachmentUrl: primaryAttachmentUrl,
     files: allUploadedFiles,
